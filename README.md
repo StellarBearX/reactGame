@@ -16,21 +16,21 @@ React Farm Life Cycle เป็นเกมจำลองการทำฟา�
 ```
 src/
 ├─ components/
-│ ├─ FarmGrid.jsx # แสดงช่องปลูกทั้งหมด
-│ ├─ Plot.jsx # ช่องปลูกเดี่ยว
-│ ├─ Shop.jsx # ร้านค้า
-│ ├─ Inventory.jsx # กระเป๋าเก็บของ
-│ ├─ StatusBar.jsx # แสดงเงิน/เวลา/วัน
-│ ├─ Menu.jsx # เมนูหลักของเกม
-│ └─ SaveLoadPanel.jsx # ปุ่มบันทึก/โหลดเกม
+│ ├─ FarmGrid.js # แสดงช่องปลูกทั้งหมด
+│ ├─ Plot.js # ช่องปลูกเดี่ยว
+│ ├─ Shop.js # ร้านค้า
+│ ├─ Inventory.js # กระเป๋าเก็บของ
+│ ├─ StatusBar.js # แสดงเงิน/เวลา/วัน
+│ ├─ Menu.js # เมนูหลักของเกม
+│ └─ SaveLoadPanel.js # ปุ่มบันทึก/โหลดเกม
 ├─ data/
 │ └─ crops.js # เก็บข้อมูลพืชทั้งหมด (ราคา, เวลาโต, รายได้)
 ├─ state/
 │ └─ useFarmStore.js # Zustand (จัดการ state ทั้งเกม)
 ├─ utils/
 │ └─ time.js # ฟังก์ชันจัดการเวลาโตและวัน-คืน
-├─ App.jsx
-└─ main.jsx
+├─ App.js
+└─ main.js
 ```
 ---
 
