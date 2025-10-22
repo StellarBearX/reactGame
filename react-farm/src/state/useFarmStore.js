@@ -3,16 +3,18 @@ import { persist } from 'zustand/middleware';
 import { CROPS_DATA } from '../data/crops.js';
 
 const INITIAL_STATE = {
-  money: 50,
+  money: 100,
   plots: Array(12).fill(null).map((_, i) => ({
     id: i,
     crop: null,
     plantedAt: null,
     isGrown: false,
   })),
-  inventory: {},
+  produceInventory: {}, // <--- เปลี่ยนชื่อจาก 'inventory'
+  seedInventory: {},    // <--- เพิ่มที่เก็บเมล็ด
   gameStartTime: Date.now(),
   selectedSeed: null,
+  currentPage: 'farm', 
 };
 
 const useFarmStore = create(
@@ -36,6 +38,7 @@ const useFarmStore = create(
       // Seed Selection
       selectSeed: (cropId) => set({ selectedSeed: cropId }),
       clearSelectedSeed: () => set({ selectedSeed: null }),
+      
 
       // Buy Seeds
       buySeeds: (cropId) => {
@@ -55,6 +58,7 @@ const useFarmStore = create(
       // Plant Crop
       plantCrop: (plotId) => {
         const state = get();
+        const cropId = state.selectedSeed;
         if (!state.selectedSeed) return false;
 
         set((state) => ({
@@ -115,7 +119,27 @@ const useFarmStore = create(
       // Get total inventory count
       getInventoryCount: () => {
         const state = get();
-        return Object.values(state.inventory).reduce((sum, count) => sum + count, 0);
+       return Object.values(state.seedInventory).reduce((sum, count) => sum + count, 0);
+      },
+
+      // ========================================
+      // ✅ ฟังก์ชันที่เพิ่มเข้ามา
+      // ========================================
+      
+      // Navigation (สำหรับ Menu)
+      setPage: (page) => set({ currentPage: page }),
+      
+      // Helper: Get current day
+      getCurrentDay: () => {
+        const state = get();
+        const elapsed = Date.now() - state.gameStartTime;
+        const dayDuration = 60 * 1000; // 60 วินาที = 1 วัน
+        return Math.floor(elapsed / dayDuration) + 1;
+      },
+
+      // Helper: Can afford check
+      canAfford: (amount) => {
+        return get().money >= amount;
       },
     }),
     {
@@ -123,8 +147,10 @@ const useFarmStore = create(
       partialize: (state) => ({
         money: state.money,
         plots: state.plots,
-        inventory: state.inventory,
+       produceInventory: state.produceInventory,
+        seedInventory: state.seedInventory,       
         gameStartTime: state.gameStartTime,
+        currentPage: state.currentPage, 
       }),
     }
   )

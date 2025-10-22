@@ -2,7 +2,8 @@ import React from "react";
 import useFarmStore from "../state/useFarmStore.js";
 
 function Inventory() {
-  const { inventory, getCropData } = useFarmStore();
+ const inventory = useFarmStore((state) => state.produceInventory);
+  const getCropData = useFarmStore((state) => state.getCropData);
   const crops = getCropData();
 
   return (

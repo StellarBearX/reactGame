@@ -1,11 +1,14 @@
-import React from "react";
+// src/App.jsx
+import React, { useState } from "react";
 import styled from "styled-components";
 import FarmGrid from "./components/FarmGrid.js";
 import Inventory from "./components/Inventory.js";
 import Shop from "./components/Shop.js";
 // import Menu from "./components/Menu.js";
+import Menu from "./components/Menu.js"; 
 import StatusBar from "./components/StatusBar.js";
 // import SaveLoadPanel from "./components/SaveLoadPanel.js";
+ import useFarmStore from "./state/useFarmStore.js"; 
 
 const AppContainer = styled.div`
   display: flex;
@@ -14,6 +17,7 @@ const AppContainer = styled.div`
   background-color: #e6f7e6;
   min-height: 100vh;
   padding: 10px;
+  padding-top: 80px; 
 `;
 
 const Header = styled.header`
@@ -62,26 +66,150 @@ const Footer = styled.footer`
 `;
 
 function App() {
+  // ✅ ข้อ 4: useState สำหรับเปิด/ปิดเมนู (15%)
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // ✅ ข้อ 5: ใช้ Zustand store (15%)
+  const currentPage = useFarmStore((state) => state.currentPage);
+  const money = useFarmStore((state) => state.money);
+  
+
+  // ✅ ฟังก์ชันสำหรับแสดงเนื้อหาตาม currentPage
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'farm':
+        return (
+          <>
+            <FarmSection>
+              <FarmGrid />
+            </FarmSection>
+            <Sidebar>
+              <Shop />
+              <Inventory />
+            </Sidebar>
+          </>
+        );
+      
+      case 'shop':
+        return (
+          <div style={{ 
+            flex: 1, 
+            background: '#fff', 
+            borderRadius: '8px', 
+            padding: '20px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+          }}>
+            <Shop />
+          </div>
+        );
+      
+      case 'inventory':
+        return (
+          <div style={{ 
+            flex: 1, 
+            background: '#fff', 
+            borderRadius: '8px', 
+            padding: '20px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+          }}>
+            <Inventory />
+          </div>
+        );
+      
+      case 'stats':
+        return (
+          <div style={{ 
+            flex: 1, 
+            background: '#fff', 
+            borderRadius: '8px', 
+            padding: '30px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+            textAlign: 'center'
+          }}>
+            <h2 style={{ color: '#f97316', marginBottom: '30px' }}>📊 สถิติ</h2>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+              gap: '20px',
+              marginTop: '20px'
+            }}>
+              <div style={{
+                background: '#fff7ed',
+                padding: '24px',
+                borderRadius: '12px',
+                border: '2px solid #fed7aa'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '8px' }}>💰</div>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>เงินทั้งหมด</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f97316' }}>
+                  {/* ✅ 4. FIX: ใช้ตัวแปร 'money' ที่เราดึงมา */}
+                  ฿{money.toLocaleString()}
+                </div>
+              </div>
+              <div style={{
+                background: '#f0fdf4',
+                padding: '24px',
+                borderRadius: '12px',
+                border: '2px solid #bbf7d0'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '8px' }}>🌱</div>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>พืชที่ปลูก</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#16a34a' }}>
+                  12 ช่อง
+                </div>
+              </div>
+              <div style={{
+                background: '#eff6ff',
+                padding: '24px',
+                borderRadius: '12px',
+                border: '2px solid #bfdbfe'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '8px' }}>📈</div>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>ของในกระเป๋า</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2563eb' }}>
+                  {useFarmStore.getState().getInventoryCount()} ชิ้น
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      
+      default:
+        return (
+          <>
+            <FarmSection>
+              <FarmGrid />
+            </FarmSection>
+            <Sidebar>
+              <Shop />
+              <Inventory />
+            </Sidebar>
+          </>
+        );
+    }
+  };
+
   return (
     <AppContainer>
+    
+      <StatusBar onMenuClick={() => setIsMenuOpen(true)} />
+      
       <Header>
         <Title>🌾 Cozy Farm Life 🌿</Title>
       </Header>
 
-      <StatusBar />
-
       <MainSection>
-        <FarmSection>
-          <FarmGrid />
-        </FarmSection>
-
-        <Sidebar>
-          <Shop />
-          <Inventory />
-        </Sidebar>
+        
+        {renderContent()}
       </MainSection>
 
       <Footer>© 2025 Cozy Farm Team</Footer>
+
+     
+      <Menu 
+        isOpen={isMenuOpen} 
+        onClose={() => setIsMenuOpen(false)} 
+      />
     </AppContainer>
   );
 }
