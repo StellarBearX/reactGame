@@ -1,4 +1,3 @@
-// state/useFarmStore.js
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CROPS_DATA } from '../data/crops.js';

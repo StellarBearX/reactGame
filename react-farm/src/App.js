@@ -1,51 +1,89 @@
-// App.js
-import React, { useEffect, useState } from 'react';
-import { 
-  Sprout, 
-  ShoppingCart, 
-  Package, 
-  Sun, 
-  Moon, 
-  Save, 
-  Upload,
-  RotateCcw 
-} from 'lucide-react';
-import useFarmStore from './state/useFarmStore.js';
-import { 
-  calculateGrowthProgress, 
-  getDayNightCycle,
-  formatTime 
-} from './utils/time.js';
+import React from "react";
+import styled from "styled-components";
+import FarmGrid from "./components/FarmGrid.js";
+import Inventory from "./components/Inventory.js";
+import Shop from "./components/Shop.js";
+// import Menu from "./components/Menu.js";
+import StatusBar from "./components/StatusBar.js";
+// import SaveLoadPanel from "./components/SaveLoadPanel.js";
+
+const AppContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #e6f7e6;
+  min-height: 100vh;
+  padding: 10px;
+`;
+
+const Header = styled.header`
+  text-align: center;
+  background-color: #a5d6a7;
+  padding: 10px 0;
+  width: 100%;
+  border-radius: 8px;
+`;
+
+const Title = styled.h1`
+  margin: 0;
+  color: #2e7d32;
+  font-size: 24px;
+`;
+
+const MainSection = styled.main`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 20px;
+  width: 90%;
+  margin-top: 20px;
+`;
+
+const FarmSection = styled.section`
+  flex: 2;
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+`;
+
+const Sidebar = styled.aside`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+`;
+
+const Footer = styled.footer`
+  margin-top: 30px;
+  text-align: center;
+  color: #555;
+  font-size: 14px;
+`;
 
 function App() {
-  const {
-    money,
-    plots,
-    inventory,
-    gameStartTime,
-    selectedSeed,
-    getCropData,
-    getCrop,
-    addMoney,
-    spendMoney,
-    selectSeed,
-    clearSelectedSeed,
-    buySeeds,
-    plantCrop,
-  } = useFarmStore();
-  
-  const [dayNight, setDayNight] = useState(getDayNightCycle(gameStartTime));
+  return (
+    <AppContainer>
+      <Header>
+        <Title>🌾 Cozy Farm Life 🌿</Title>
+      </Header>
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setDayNight(getDayNightCycle(gameStartTime));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [gameStartTime]);
+      <StatusBar />
 
-  const cropsData = getCropData();
+      <MainSection>
+        <FarmSection>
+          <FarmGrid />
+        </FarmSection>
 
-  return (''); // UI implementation goes here
+        <Sidebar>
+          <Shop />
+          <Inventory />
+        </Sidebar>
+      </MainSection>
+
+      <Footer>© 2025 Cozy Farm Team</Footer>
+    </AppContainer>
+  );
 }
 
 export default App;
