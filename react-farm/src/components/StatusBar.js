@@ -1,8 +1,9 @@
 // src/components/StatusBar.jsx
 import React, { useState, useEffect } from "react";
 import PropTypes from 'prop-types';
+import { useSelector } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
 import { getDayNightCycle, getGameDay, getTimeOfDay, formatRealTime, getGameTime } from "../utils/time.js";
-import useFarmStore from "../state/useFarmStore.js";
+import state from '../state/store.js';
 
 /**
  * StatusBar Component - แสดงสถานะเงิน วัน เวลา
@@ -15,9 +16,9 @@ function StatusBar({ onMenuClick }) {
   const [realTime, setRealTime] = useState(new Date());
   const [isMoneyAnimating, setIsMoneyAnimating] = useState(false);
   
-  // ✅ ข้อ 5 + 2: Zustand + ใช้ state ถูกต้อง (15% + 10%)
-  const { money, gameStartTime } = useFarmStore();
-  
+  // ✅ ข้อ 5: useSelector จาก Redux (15%)
+  const money = useSelector((state) => state.farm.money);
+const gameStartTime = useSelector((state) => state.farm?.gameStartTime ?? Date.now());
   // คำนวณข้อมูลเวลา
   const timeData = getTimeOfDay(gameStartTime);
   const { hour: gameHour, minute: gameMinute } = getGameTime(gameStartTime);
@@ -48,9 +49,10 @@ function StatusBar({ onMenuClick }) {
 
   // กำหนดสีเงินตามจำนวน
   const getMoneyColor = () => {
-    if (money < 20) return '#dc2626'; // แดง
-    if (money > 200) return '#16a34a'; // เขียว
-    return '#ca8a04'; // เหลือง
+  
+    if (money < 20) return '#dc2626';
+    if (money > 200) return '#16a34a';
+    return '#ca8a04';
   };
 
   return (
@@ -92,7 +94,7 @@ function StatusBar({ onMenuClick }) {
           <div>
             <div style={{ fontSize: '12px', opacity: 0.8 }}>เงิน</div>
             <div style={{ fontSize: '18px', fontWeight: 'bold', color: getMoneyColor() }}>
-              ฿{money.toLocaleString()}
+             ฿{money ? money.toLocaleString() : 0}
             </div>
           </div>
         </div>
@@ -134,25 +136,6 @@ function StatusBar({ onMenuClick }) {
             </div>
           </div>
         </div>
-
-        {/* ⏰ เวลาจริง
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: 'rgba(255,255,255,0.2)',
-          padding: '8px 16px',
-          borderRadius: '8px',
-          backdropFilter: 'blur(10px)',
-        }}>
-          <span style={{ fontSize: '24px' }}>⏰</span>
-          <div>
-            <div style={{ fontSize: '12px', opacity: 0.8 }}>เวลาจริง</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-              {formatRealTime(realTime)}
-            </div>
-          </div>
-        </div> */}
 
         {/* 📋 ปุ่มเมนู - ✅ ข้อ 3: Handle event (15%) */}
         <button

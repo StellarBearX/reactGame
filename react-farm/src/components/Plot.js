@@ -1,11 +1,16 @@
+// src/components/Plot.jsx
 import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from 'react-redux'; // ✅ ข้อ 5: Redux hooks (15%)
+import { plantCrop, harvestCrop } from '../state/farmSlice.js';
 import { calculateGrowthProgress, getTimeRemaining, formatTime, isFullyGrown } from "../utils/time.js";
-import useFarmStore from "../state/useFarmStore.js";
+import { CROPS_DATA } from '../data/crops.js';
 
 function Plot({ plot }) {
-  const { getCropData, plantCrop, harvestCrop, selectedSeed } = useFarmStore();
-  const crops = getCropData();
-  const crop = plot.crop ? crops[plot.crop] : null;
+  // ✅ ข้อ 5: useSelector, useDispatch
+  const dispatch = useDispatch();
+  const selectedSeed = useSelector((state) => state.farm.selectedSeed);
+  
+  const crop = plot.crop ? CROPS_DATA[plot.crop] : null;
 
   // state สำหรับ trigger re-render ทุกวิ
   const [, setTick] = useState(0);
@@ -18,10 +23,21 @@ function Plot({ plot }) {
     return () => clearInterval(interval);
   }, [plot.crop]);
 
+  // ✅ ข้อ 3: Handle click events (15%)
+  const handlePlotClick = () => {
+    if (!plot.crop && selectedSeed) {
+      // ปลูกพืช
+      dispatch(plantCrop(plot.id));
+    } else if (plot.crop && grown) {
+      // เก็บเกี่ยว
+      dispatch(harvestCrop(plot.id));
+    }
+  };
+
   if (!plot.crop) {
     return (
-      <div className="plot empty" onClick={() => selectedSeed && plantCrop(plot.id)}>
-        ว่าง
+      <div className="plot empty" onClick={handlePlotClick}>
+        {selectedSeed ? '🌱 คลิกเพื่อปลูก' : 'ว่าง'}
       </div>
     );
   }
@@ -33,11 +49,11 @@ function Plot({ plot }) {
   return (
     <div
       className={`plot ${grown ? "grown" : "growing"}`}
-      onClick={() => grown && harvestCrop(plot.id)}
+      onClick={handlePlotClick}
     >
-      <div>{crop.name}</div>
+      <div>{crop.icon} {crop.name}</div>
       {grown ? (
-        <span>เก็บเกี่ยวได้!</span>
+        <span>✨ เก็บเกี่ยวได้!</span>
       ) : (
         <span>{progress.toFixed(0)}% ({formatTime(timeLeft)})</span>
       )}

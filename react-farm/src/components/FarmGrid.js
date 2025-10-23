@@ -1,9 +1,12 @@
+// src/components/FarmGrid.jsx
 import React from "react";
-import useFarmStore from "../state/useFarmStore.js";
+import { useSelector } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
 import Plot from "./Plot.js";
 
 function FarmGrid() {
-  const { plots } = useFarmStore();
+  // ✅ ข้อ 5: ใช้ useSelector แทน Zustand
+  const plots = useSelector((state) => state.farm?.plots ?? []);
+  
   return (
     <div className="farm-grid">
       {plots.map((plot) => (

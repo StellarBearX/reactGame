@@ -1,14 +1,12 @@
 // src/App.jsx
 import React, { useState } from "react";
 import styled from "styled-components";
+import { useSelector } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
 import FarmGrid from "./components/FarmGrid.js";
 import Inventory from "./components/Inventory.js";
 import Shop from "./components/Shop.js";
-// import Menu from "./components/Menu.js";
-import Menu from "./components/Menu.js"; 
+import Menu from "./components/Menu.js";
 import StatusBar from "./components/StatusBar.js";
-// import SaveLoadPanel from "./components/SaveLoadPanel.js";
- import useFarmStore from "./state/useFarmStore.js"; 
 
 const AppContainer = styled.div`
   display: flex;
@@ -17,7 +15,7 @@ const AppContainer = styled.div`
   background-color: #e6f7e6;
   min-height: 100vh;
   padding: 10px;
-  padding-top: 80px; 
+  padding-top: 80px;
 `;
 
 const Header = styled.header`
@@ -69,10 +67,12 @@ function App() {
   // ✅ ข้อ 4: useState สำหรับเปิด/ปิดเมนู (15%)
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  // ✅ ข้อ 5: ใช้ Zustand store (15%)
-  const currentPage = useFarmStore((state) => state.currentPage);
-  const money = useFarmStore((state) => state.money);
-  
+  // ✅ ข้อ 5: ใช้ Redux useSelector (15%)
+  const currentPage = useSelector((state) => state.farm.currentPage);
+  const money = useSelector((state) => state.farm.money);
+ const seedInventory = useSelector((state) => state.farm.seedInventory || {}); // ✅ เพิ่ม || {}
+
+const totalItems = Object.values(seedInventory).reduce((sum, count) => sum + count, 0);
 
   // ✅ ฟังก์ชันสำหรับแสดงเนื้อหาตาม currentPage
   const renderContent = () => {
@@ -142,7 +142,6 @@ function App() {
                 <div style={{ fontSize: '48px', marginBottom: '8px' }}>💰</div>
                 <div style={{ fontSize: '14px', color: '#6b7280' }}>เงินทั้งหมด</div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f97316' }}>
-                  {/* ✅ 4. FIX: ใช้ตัวแปร 'money' ที่เราดึงมา */}
                   ฿{money.toLocaleString()}
                 </div>
               </div>
@@ -165,9 +164,9 @@ function App() {
                 border: '2px solid #bfdbfe'
               }}>
                 <div style={{ fontSize: '48px', marginBottom: '8px' }}>📈</div>
-                <div style={{ fontSize: '14px', color: '#6b7280' }}>ของในกระเป๋า</div>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>เมล็ดในกระเป๋า</div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2563eb' }}>
-                  {useFarmStore.getState().getInventoryCount()} ชิ้น
+                  {totalItems} ชิ้น
                 </div>
               </div>
             </div>
@@ -191,7 +190,7 @@ function App() {
 
   return (
     <AppContainer>
-    
+      {/* ✅ StatusBar Component พร้อม props */}
       <StatusBar onMenuClick={() => setIsMenuOpen(true)} />
       
       <Header>
@@ -199,13 +198,13 @@ function App() {
       </Header>
 
       <MainSection>
-        
+        {/* ✅ แสดงเนื้อหาตาม currentPage */}
         {renderContent()}
       </MainSection>
 
-      <Footer>© 2025 Cozy Farm Team</Footer>
+      <Footer>© 2025 Cozy Farm Team | Powered by Redux Toolkit</Footer>
 
-     
+      {/* ✅ Menu Component */}
       <Menu 
         isOpen={isMenuOpen} 
         onClose={() => setIsMenuOpen(false)} 

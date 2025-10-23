@@ -1,8 +1,8 @@
-//เมนู
 // src/components/Menu.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import useFarmStore from '../state/useFarmStore.js';
+import { useSelector, useDispatch } from 'react-redux'; // ✅ ข้อ 5: Redux hooks (15%)
+import { setPage, resetGame } from '../state/farmSlice.js';
 import { getGameDay } from '../utils/time.js';
 
 /**
@@ -14,33 +14,29 @@ function Menu({ isOpen, onClose }) {
   // ✅ ข้อ 4: React Hooks - useState (15%)
   const [hoveredItem, setHoveredItem] = useState(null);
   
-  // ✅ ข้อ 5 + 2: Zustand state (15% + 10%)
-  const currentPage = useFarmStore((state) => state.currentPage);
-  const setPage = useFarmStore((state) => state.setPage);
-  const money = useFarmStore((state) => state.money);
-  const gameStartTime = useFarmStore((state) => state.gameStartTime);
-  const resetGame = useFarmStore((state) => state.resetGame);
- const inventory = useFarmStore((state) => state.inventory);
- 
+  // ✅ ข้อ 5: Redux - useSelector, useDispatch (15%)
+  const dispatch = useDispatch();
+  const currentPage = useSelector((state) => state.farm.currentPage);
+  const money = useSelector((state) => state.farm.money);
+  const gameStartTime = useSelector((state) => state.farm.gameStartTime);
+  const seedInventory = useSelector((state) => state.farm.seedInventory || {}); // ✅ เพิ่ม || {}
+const selectedSeed = useSelector((state) => state.farm.selectedSeed);
   
   const day = getGameDay(gameStartTime);
-  const totalItems = useFarmStore((state) => {
-    const itemsInInventory = Object.values(state.seedInventory).reduce((sum, count) => sum + count, 0);
-    const itemsInHand = state.selectedSeed ? 1 : 0; 
- 
-    return itemsInInventory + itemsInHand;
-  });
-
+  
+  // ✅ คำนวณจำนวนของในกระเป๋า (เมล็ด + เมล็ดที่เลือกอยู่)
+  const totalItems = Object.values(seedInventory).reduce((sum, count) => sum + count, 0) 
+                 + (selectedSeed ? 1 : 0);
   // ✅ ข้อ 3: Handle navigation event (15%)
   const handleNavigation = (page) => {
-    setPage(page);
+    dispatch(setPage(page));
     onClose();
   };
 
   // ✅ ข้อ 3: Handle reset game (15%)
   const handleResetGame = () => {
     if (window.confirm('คุณแน่ใจหรือไม่ที่จะรีเซ็ตเกม? ข้อมูลทั้งหมดจะหายไป!')) {
-      resetGame();
+      dispatch(resetGame());
       onClose();
     }
   };
@@ -223,7 +219,7 @@ function Menu({ isOpen, onClose }) {
           color: '#6b7280',
           borderTop: '1px solid #e5e7eb'
         }}>
-          💾 บันทึกอัตโนมัติ (Zustand Persist)
+          💾 บันทึกอัตโนมัติ (Redux Toolkit + localStorage)
         </div>
       </div>
 
