@@ -18,7 +18,10 @@ function StatusBar({ onMenuClick }) {
   
   // ✅ ข้อ 5: useSelector จาก Redux (15%)
   const money = useSelector((state) => state.farm.money);
-const gameStartTime = useSelector((state) => state.farm?.gameStartTime ?? Date.now());
+  const level = useSelector((state) => state.farm.level);
+  const xp = useSelector((state) => state.farm.xp);
+  const maxXp = useSelector((state) => state.farm.maxXp);
+  const gameStartTime = useSelector((state) => state.farm?.gameStartTime ?? Date.now());
   // คำนวณข้อมูลเวลา
   const timeData = getTimeOfDay(gameStartTime);
   const { hour: gameHour, minute: gameMinute } = getGameTime(gameStartTime);
@@ -76,6 +79,41 @@ const gameStartTime = useSelector((state) => state.farm?.gameStartTime ?? Date.n
         flexWrap: 'wrap',
         gap: '12px'
       }}>
+        
+        {/* 🎯 Level & XP */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'rgba(255,255,255,0.2)',
+          padding: '6px 16px',
+          borderRadius: '8px',
+          backdropFilter: 'blur(10px)',
+          minWidth: '180px',
+        }}>
+          <div>
+            <div style={{ fontSize: '12px', opacity: 0.8 }}>Level {level}</div>
+            <div style={{ 
+              background: 'rgba(0,0,0,0.2)', 
+              borderRadius: '4px', 
+              height: '6px', 
+              width: '130px',
+              overflow: 'hidden',
+              marginTop: '4px'
+            }}>
+              <div style={{
+                background: 'linear-gradient(to right, #8b5cf6, #a78bfa)',
+                height: '100%',
+                width: `${(xp / maxXp) * 100}%`,
+                transition: 'width 0.3s ease',
+                borderRadius: '4px',
+              }}></div>
+            </div>
+            <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '2px' }}>
+              {xp}/{maxXp} XP
+            </div>
+          </div>
+        </div>
         
         {/* 💰 เงิน */}
         <div style={{

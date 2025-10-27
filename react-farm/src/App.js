@@ -70,9 +70,11 @@ function App() {
   // ✅ ข้อ 5: ใช้ Redux useSelector (15%)
   const currentPage = useSelector((state) => state.farm.currentPage);
   const money = useSelector((state) => state.farm.money);
- const seedInventory = useSelector((state) => state.farm.seedInventory || {}); // ✅ เพิ่ม || {}
+  const seedInventory = useSelector((state) => state.farm.seedInventory || {});
+  const statistics = useSelector((state) => state.farm.statistics || {});
+  const level = useSelector((state) => state.farm.level);
 
-const totalItems = Object.values(seedInventory).reduce((sum, count) => sum + count, 0);
+  const totalItems = Object.values(seedInventory).reduce((sum, count) => sum + count, 0);
 
   // ✅ ฟังก์ชันสำหรับแสดงเนื้อหาตาม currentPage
   const renderContent = () => {
@@ -139,6 +141,18 @@ const totalItems = Object.values(seedInventory).reduce((sum, count) => sum + cou
                 borderRadius: '12px',
                 border: '2px solid #fed7aa'
               }}>
+                <div style={{ fontSize: '48px', marginBottom: '8px' }}>⭐</div>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>ระดับ</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f97316' }}>
+                  Level {level}
+                </div>
+              </div>
+              <div style={{
+                background: '#fff7ed',
+                padding: '24px',
+                borderRadius: '12px',
+                border: '2px solid #fed7aa'
+              }}>
                 <div style={{ fontSize: '48px', marginBottom: '8px' }}>💰</div>
                 <div style={{ fontSize: '14px', color: '#6b7280' }}>เงินทั้งหมด</div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f97316' }}>
@@ -152,9 +166,21 @@ const totalItems = Object.values(seedInventory).reduce((sum, count) => sum + cou
                 border: '2px solid #bbf7d0'
               }}>
                 <div style={{ fontSize: '48px', marginBottom: '8px' }}>🌱</div>
-                <div style={{ fontSize: '14px', color: '#6b7280' }}>พืชที่ปลูก</div>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>ปลูกทั้งหมด</div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#16a34a' }}>
-                  12 ช่อง
+                  {statistics.totalPlanted || 0} ชิ้น
+                </div>
+              </div>
+              <div style={{
+                background: '#f0fdf4',
+                padding: '24px',
+                borderRadius: '12px',
+                border: '2px solid #bbf7d0'
+              }}>
+                <div style={{ fontSize: '48px', marginBottom: '8px' }}>🌾</div>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>เก็บเกี่ยวทั้งหมด</div>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#16a34a' }}>
+                  {statistics.totalHarvested || 0} ชิ้น
                 </div>
               </div>
               <div style={{
@@ -164,9 +190,9 @@ const totalItems = Object.values(seedInventory).reduce((sum, count) => sum + cou
                 border: '2px solid #bfdbfe'
               }}>
                 <div style={{ fontSize: '48px', marginBottom: '8px' }}>📈</div>
-                <div style={{ fontSize: '14px', color: '#6b7280' }}>เมล็ดในกระเป๋า</div>
+                <div style={{ fontSize: '14px', color: '#6b7280' }}>รายได้รวม</div>
                 <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#2563eb' }}>
-                  {totalItems} ชิ้น
+                  ฿{(statistics.totalEarned || 0).toLocaleString()}
                 </div>
               </div>
             </div>
