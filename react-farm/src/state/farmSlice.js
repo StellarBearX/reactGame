@@ -5,8 +5,8 @@ import { createSlice } from '@reduxjs/toolkit';
 import { CROPS_DATA } from '../data/crops.js';
 
 const INITIAL_STATE = {
-  money: 100,
-  plots: Array(12).fill(null).map((_, i) => ({
+  money: 5,
+  plots: Array(4).fill(null).map((_, i) => ({
     id: i,
     crop: null,
     plantedAt: null,
@@ -159,10 +159,21 @@ const farmSlice = createSlice({
         state.maxXp = Math.floor(100 * Math.pow(1.5, state.level - 2));
         state.xp = excessXp;
         
-        // Unlock ข้อมูลต่างๆ เมื่อ level up
-        if (state.level === 2) {
-          // Unlock achievement for first level up
-        }
+      // 🌱 เมื่อถึงเลเวล 10 ให้เพิ่มพื้นที่เพาะปลูก
+      if (state.level % 10 === 0 && state.plots.length < 20) {
+        const newPlots = Array(1).fill(null).map((_, i) => ({
+        id: state.plots.length + i,
+        crop: null,
+        plantedAt: null,
+        isGrown: false,
+      }));
+    state.plots.push(...newPlots);
+  }
+
+  // 🏅 ตัวอย่าง unlock อย่างอื่น
+  if (state.level === 2) {
+    // Unlock achievement for first level up
+  }
       }
     },
 

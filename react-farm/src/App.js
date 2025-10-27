@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState } from "react";
 import styled from "styled-components";
 import { useSelector } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
@@ -12,10 +11,11 @@ const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: #e6f7e6;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
   min-height: 100vh;
-  padding: 10px;
   padding-top: 80px;
+  position: relative;
+  overflow-x: hidden;
 `;
 
 const Header = styled.header`
