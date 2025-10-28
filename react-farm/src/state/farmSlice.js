@@ -30,6 +30,47 @@ const INITIAL_STATE = {
     cropsPlanted: {},
     cropsHarvested: {},
   },
+  // 🏪 ระบบตลาด Dynamic Market
+  market: {
+    currentPrices: {},
+    previousPrices: {},
+    priceTrends: {},
+    activeEvents: [],
+    currentSeason: 'spring',
+    lastPriceUpdate: Date.now(),
+    marketHistory: []
+  },
+  // 📋 ระบบ Trade Contracts
+  contracts: {
+    activeContracts: [],
+    completedContracts: [],
+    contractHistory: [],
+    lastContractGeneration: Date.now()
+  },
+  // 🏭 ระบบ Processing & Crafting
+  crafting: {
+    stations: {
+      mill: { unlocked: false, level: 0 },
+      kitchen: { unlocked: false, level: 0 },
+      workshop: { unlocked: false, level: 0 }
+    },
+    craftingQueue: [],
+    processedInventory: {},
+    recipes: {},
+    craftingHistory: []
+  },
+  // 🎯 ระบบ Skills & Perks
+  skills: {
+    farming: { level: 1, xp: 0, perks: [] },
+    cooking: { level: 1, xp: 0, perks: [] },
+    trading: { level: 1, xp: 0, perks: [] }
+  },
+  // 🎮 ระบบ Tutorial & Help
+  tutorial: {
+    hasSeenWelcome: false,
+    completedTutorials: [],
+    showHints: true
+  }
 };
 
 
@@ -222,6 +263,259 @@ const farmSlice = createSlice({
     },
 
     // ========================================
+    // Market System
+    // ========================================
+    updateMarketPrices: (state, action) => {
+      const { prices, season, activeEvents, trends } = action.payload;
+      state.market.previousPrices = { ...state.market.currentPrices };
+      state.market.currentPrices = prices;
+      state.market.currentSeason = season;
+      state.market.activeEvents = activeEvents;
+      state.market.priceTrends = trends;
+      state.market.lastPriceUpdate = Date.now();
+      
+      // บันทึกประวัติตลาด
+      state.market.marketHistory.push({
+        day: Math.floor((Date.now() - state.gameStartTime) / (60 * 1000)) + 1,
+        prices: { ...prices },
+        season,
+        activeEvents: [...activeEvents],
+        timestamp: Date.now()
+      });
+      
+      // เก็บเฉพาะประวัติ 30 วันล่าสุด
+      if (state.market.marketHistory.length > 30) {
+        state.market.marketHistory = state.market.marketHistory.slice(-30);
+      }
+    },
+    
+    addMarketEvent: (state, action) => {
+      const event = action.payload;
+      if (!state.market.activeEvents.includes(event.id)) {
+        state.market.activeEvents.push(event.id);
+      }
+    },
+    
+    removeMarketEvent: (state, action) => {
+      const eventId = action.payload;
+      state.market.activeEvents = state.market.activeEvents.filter(id => id !== eventId);
+    },
+
+    // ========================================
+    // Contract System
+    // ========================================
+    addContract: (state, action) => {
+      const contract = action.payload;
+      state.contracts.activeContracts.push(contract);
+      state.contracts.lastContractGeneration = Date.now();
+    },
+    
+    updateContractProgress: (state, action) => {
+      const { contractId, progress } = action.payload;
+      const contract = state.contracts.activeContracts.find(c => c.id === contractId);
+      if (contract) {
+        contract.progress = progress;
+        
+        // คำนวณเปอร์เซ็นต์ความคืบหน้า
+        const totalRequired = Object.values(contract.requirements).reduce((sum, count) => sum + count, 0);
+        const totalProgress = Object.values(progress).reduce((sum, count) => sum + count, 0);
+        contract.completionPercentage = totalRequired > 0 ? (totalProgress / totalRequired) * 100 : 0;
+        
+        if (contract.completionPercentage >= 100) {
+          contract.status = 'ready_to_complete';
+        }
+      }
+    },
+    
+    completeContract: (state, action) => {
+      const contractId = action.payload;
+      const contractIndex = state.contracts.activeContracts.findIndex(c => c.id === contractId);
+      
+      if (contractIndex !== -1) {
+        const contract = state.contracts.activeContracts[contractIndex];
+        contract.status = 'completed';
+        contract.completedAt = Date.now();
+        
+        // ลบสินค้าจาก inventory ตามที่ส่งมอบ
+        Object.keys(contract.requirements).forEach(itemId => {
+          const requiredAmount = contract.requirements[itemId];
+          if (state.produceInventory[itemId]) {
+            state.produceInventory[itemId] -= requiredAmount;
+            if (state.produceInventory[itemId] <= 0) {
+              delete state.produceInventory[itemId];
+            }
+          }
+        });
+        
+        // ย้ายไปยังรายการที่เสร็จสิ้น
+        state.contracts.completedContracts.push(contract);
+        state.contracts.activeContracts.splice(contractIndex, 1);
+        
+        // ให้รางวัล
+        contract.rewards.forEach(reward => {
+          if (reward.type === 'money') {
+            state.money += reward.amount;
+          } else if (reward.type === 'xp') {
+            state.xp += reward.amount;
+          } else if (reward.type === 'seeds') {
+            if (!state.seedInventory[reward.item]) {
+              state.seedInventory[reward.item] = 0;
+            }
+            state.seedInventory[reward.item] += reward.amount;
+          }
+        });
+        
+        // อัพเดทสถิติ
+        state.statistics.totalEarned += contract.rewards.reduce((sum, r) => sum + (r.type === 'money' ? r.amount : 0), 0);
+      }
+    },
+    
+    expireContract: (state, action) => {
+      const contractId = action.payload;
+      const contractIndex = state.contracts.activeContracts.findIndex(c => c.id === contractId);
+      
+      if (contractIndex !== -1) {
+        const contract = state.contracts.activeContracts[contractIndex];
+        contract.status = 'expired';
+        contract.expiredAt = Date.now();
+        
+        state.contracts.contractHistory.push(contract);
+        state.contracts.activeContracts.splice(contractIndex, 1);
+      }
+    },
+
+    // ========================================
+    // Crafting System
+    // ========================================
+    unlockStation: (state, action) => {
+      const stationId = action.payload;
+      if (state.crafting.stations[stationId]) {
+        state.crafting.stations[stationId].unlocked = true;
+        state.crafting.stations[stationId].level = 1;
+      }
+    },
+    
+    startCrafting: (state, action) => {
+      const { recipeId, stationId } = action.payload;
+      const recipe = action.payload.recipe;
+      
+      // ตรวจสอบว่ามีวัตถุดิบครบหรือไม่
+      let canCraft = true;
+      for (const [itemId, requiredAmount] of Object.entries(recipe.inputs)) {
+        const availableAmount = state.produceInventory[itemId] || 0;
+        if (availableAmount < requiredAmount) {
+          canCraft = false;
+          break;
+        }
+      }
+      
+      if (canCraft) {
+        // ลบวัตถุดิบ
+        for (const [itemId, requiredAmount] of Object.entries(recipe.inputs)) {
+          state.produceInventory[itemId] -= requiredAmount;
+          if (state.produceInventory[itemId] <= 0) {
+            delete state.produceInventory[itemId];
+          }
+        }
+        
+        // เพิ่มงานลงคิว
+        const craftingJob = {
+          id: `craft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          recipeId,
+          stationId,
+          startTime: Date.now(),
+          craftingTime: recipe.craftingTime,
+          status: 'in_progress',
+          recipe
+        };
+        
+        state.crafting.craftingQueue.push(craftingJob);
+      }
+    },
+    
+    completeCrafting: (state, action) => {
+      const jobId = action.payload;
+      const jobIndex = state.crafting.craftingQueue.findIndex(j => j.id === jobId);
+      
+      if (jobIndex !== -1) {
+        const job = state.crafting.craftingQueue[jobIndex];
+        
+        // เพิ่มผลผลิต
+        for (const [itemId, amount] of Object.entries(job.recipe.outputs)) {
+          if (!state.crafting.processedInventory[itemId]) {
+            state.crafting.processedInventory[itemId] = 0;
+          }
+          state.crafting.processedInventory[itemId] += amount;
+        }
+        
+        // ให้ XP
+        state.xp += job.recipe.xpReward;
+        
+        // บันทึกประวัติ
+        state.crafting.craftingHistory.push({
+          ...job,
+          completedAt: Date.now(),
+          status: 'completed'
+        });
+        
+        // ลบออกจากคิว
+        state.crafting.craftingQueue.splice(jobIndex, 1);
+      }
+    },
+    
+    sellProcessedItem: (state, action) => {
+      const { itemId, amount, price } = action.payload;
+      
+      if (state.crafting.processedInventory[itemId] >= amount) {
+        state.crafting.processedInventory[itemId] -= amount;
+        if (state.crafting.processedInventory[itemId] <= 0) {
+          delete state.crafting.processedInventory[itemId];
+        }
+        
+        state.money += price * amount;
+        state.statistics.totalEarned += price * amount;
+      }
+    },
+
+    // ========================================
+    // Skills System
+    // ========================================
+    addSkillXP: (state, action) => {
+      const { skillType, amount } = action.payload;
+      
+      if (state.skills[skillType]) {
+        state.skills[skillType].xp += amount;
+        
+        // ตรวจสอบเลเวลอัพ
+        const currentLevel = state.skills[skillType].level;
+        const requiredXP = currentLevel * 100; // 100 XP ต่อเลเวล
+        
+        if (state.skills[skillType].xp >= requiredXP) {
+          state.skills[skillType].level += 1;
+          state.skills[skillType].xp -= requiredXP;
+        }
+      }
+    },
+
+    // ========================================
+    // Tutorial System
+    // ========================================
+    markWelcomeSeen: (state) => {
+      state.tutorial.hasSeenWelcome = true;
+    },
+    
+    completeTutorial: (state, action) => {
+      const tutorialId = action.payload;
+      if (!state.tutorial.completedTutorials.includes(tutorialId)) {
+        state.tutorial.completedTutorials.push(tutorialId);
+      }
+    },
+    
+    toggleHints: (state) => {
+      state.tutorial.showHints = !state.tutorial.showHints;
+    },
+
+    // ========================================
     // Game Control
     // ========================================
     resetGame: (state) => {
@@ -244,6 +538,27 @@ export const {
   harvestCrop,
   markPlotGrown,
   setPage,
+  // Market actions
+  updateMarketPrices,
+  addMarketEvent,
+  removeMarketEvent,
+  // Contract actions
+  addContract,
+  updateContractProgress,
+  completeContract,
+  expireContract,
+  // Crafting actions
+  unlockStation,
+  startCrafting,
+  completeCrafting,
+  sellProcessedItem,
+  // Skills actions
+  addSkillXP,
+  // Tutorial actions
+  markWelcomeSeen,
+  completeTutorial,
+  toggleHints,
+  // Game control
   resetGame,
 } = farmSlice.actions;
 

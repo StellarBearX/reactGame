@@ -9,7 +9,7 @@ import state from '../state/store.js';
  * StatusBar Component - แสดงสถานะเงิน วัน เวลา
  * ✅ ข้อ 1: Function Component + PropTypes (10%)
  */
-function StatusBar({ onMenuClick }) {
+function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
   // ✅ ข้อ 4: React Hooks - useState (15%)
   const [dayNight, setDayNight] = useState("day");
   const [gameDay, setGameDay] = useState(1);
@@ -175,31 +175,92 @@ function StatusBar({ onMenuClick }) {
           </div>
         </div>
 
-        {/* 📋 ปุ่มเมนู - ✅ ข้อ 3: Handle event (15%) */}
-        <button
-          onClick={onMenuClick}
-          style={{
-            background: 'rgba(255,255,255,0.2)',
-            border: 'none',
-            color: 'white',
-            padding: '8px 24px',
-            borderRadius: '8px',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            backdropFilter: 'blur(10px)',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(255,255,255,0.3)';
-            e.target.style.transform = 'scale(1.05)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(255,255,255,0.2)';
-            e.target.style.transform = 'scale(1)';
-          }}
-        >
-          📋 เมนู
-        </button>
+        {/* ปุ่มควบคุม */}
+        <div style={{
+          display: 'flex',
+          gap: '8px'
+        }}>
+          {/* 📚 ปุ่มช่วยเหลือ */}
+          <button
+            onClick={onHelpClick}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              backdropFilter: 'blur(10px)',
+              fontSize: '14px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.3)';
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.2)';
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            📚 ช่วยเหลือ
+          </button>
+          
+          {/* 📋 ปุ่มเมนู */}
+          <button
+            onClick={onMenuClick}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              backdropFilter: 'blur(10px)',
+              fontSize: '14px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.3)';
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.2)';
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            📋 เมนู
+          </button>
+          
+          {/* 🚪 ปุ่มออกจากเกม */}
+          <button
+            onClick={onExitClick}
+            style={{
+              background: 'rgba(220, 38, 38, 0.2)',
+              border: 'none',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              backdropFilter: 'blur(10px)',
+              fontSize: '14px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(220, 38, 38, 0.3)';
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(220, 38, 38, 0.2)';
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            🚪 ออก
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -208,6 +269,8 @@ function StatusBar({ onMenuClick }) {
 // ✅ ข้อ 1: PropTypes validation (10%)
 StatusBar.propTypes = {
   onMenuClick: PropTypes.func.isRequired,
+  onHelpClick: PropTypes.func.isRequired,
+  onExitClick: PropTypes.func.isRequired,
 };
 
 export default StatusBar;

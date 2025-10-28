@@ -1,11 +1,17 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { useSelector } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
+import { useSelector, useDispatch } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
 import FarmGrid from "./components/FarmGrid.js";
 import Inventory from "./components/Inventory.js";
 import Shop from "./components/Shop.js";
 import Menu from "./components/Menu.js";
 import StatusBar from "./components/StatusBar.js";
+import MarketBoard from "./components/MarketBoard.js";
+import ContractsPanel from "./components/ContractsPanel.js";
+import CraftingStation from "./components/CraftingStation.js";
+import WelcomeScreen from "./components/WelcomeScreen.js";
+import HelpPanel from "./components/HelpPanel.js";
+import { markWelcomeSeen } from './state/farmSlice.js';
 
 const AppContainer = styled.div`
   display: flex;
@@ -64,8 +70,10 @@ const Footer = styled.footer`
 `;
 
 function App() {
+  const dispatch = useDispatch();
   // ✅ ข้อ 4: useState สำหรับเปิด/ปิดเมนู (15%)
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   
   // ✅ ข้อ 5: ใช้ Redux useSelector (15%)
   const currentPage = useSelector((state) => state.farm.currentPage);
@@ -73,8 +81,24 @@ function App() {
   const seedInventory = useSelector((state) => state.farm.seedInventory || {});
   const statistics = useSelector((state) => state.farm.statistics || {});
   const level = useSelector((state) => state.farm.level);
+  const hasSeenWelcome = useSelector((state) => state.farm.tutorial.hasSeenWelcome);
 
   const totalItems = Object.values(seedInventory).reduce((sum, count) => sum + count, 0);
+  
+  // ฟังก์ชันสำหรับจัดการการออกจากเกม
+  const handleExitGame = () => {
+    if (window.confirm('คุณแน่ใจหรือไม่ที่จะออกจากเกม? ข้อมูลเกมจะถูกบันทึกอัตโนมัติ')) {
+      // บันทึกข้อมูลเกมก่อนออก
+      window.localStorage.setItem('farm-exit-time', Date.now().toString());
+      // ปิดหน้าต่างหรือแท็บ
+      window.close();
+    }
+  };
+  
+  // ฟังก์ชันสำหรับเริ่มเกม
+  const handleStartGame = () => {
+    dispatch(markWelcomeSeen());
+  };
 
   // ✅ ฟังก์ชันสำหรับแสดงเนื้อหาตาม currentPage
   const renderContent = () => {
@@ -115,6 +139,45 @@ function App() {
             boxShadow: '0 0 10px rgba(0,0,0,0.1)'
           }}>
             <Inventory />
+          </div>
+        );
+      
+      case 'market':
+        return (
+          <div style={{ 
+            flex: 1, 
+            background: '#fff', 
+            borderRadius: '8px', 
+            padding: '20px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+          }}>
+            <MarketBoard />
+          </div>
+        );
+      
+      case 'contracts':
+        return (
+          <div style={{ 
+            flex: 1, 
+            background: '#fff', 
+            borderRadius: '8px', 
+            padding: '20px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+          }}>
+            <ContractsPanel />
+          </div>
+        );
+      
+      case 'crafting':
+        return (
+          <div style={{ 
+            flex: 1, 
+            background: '#fff', 
+            borderRadius: '8px', 
+            padding: '20px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+          }}>
+            <CraftingStation />
           </div>
         );
       
@@ -214,10 +277,19 @@ function App() {
     }
   };
 
+  // แสดง Welcome Screen สำหรับผู้เล่นใหม่
+  if (!hasSeenWelcome) {
+    return <WelcomeScreen onStartGame={handleStartGame} />;
+  }
+
   return (
     <AppContainer>
       {/* ✅ StatusBar Component พร้อม props */}
-      <StatusBar onMenuClick={() => setIsMenuOpen(true)} />
+      <StatusBar 
+        onMenuClick={() => setIsMenuOpen(true)}
+        onHelpClick={() => setIsHelpOpen(true)}
+        onExitClick={handleExitGame}
+      />
       
       <Header>
         <Title>🌾 Cozy Farm Life 🌿</Title>
@@ -234,6 +306,12 @@ function App() {
       <Menu 
         isOpen={isMenuOpen} 
         onClose={() => setIsMenuOpen(false)} 
+      />
+      
+      {/* ✅ Help Panel */}
+      <HelpPanel 
+        isOpen={isHelpOpen} 
+        onClose={() => setIsHelpOpen(false)} 
       />
     </AppContainer>
   );
