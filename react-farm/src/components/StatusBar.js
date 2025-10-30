@@ -1,5 +1,5 @@
 // src/components/StatusBar.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PropTypes from 'prop-types';
 import { useSelector } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
 import { getDayNightCycle, getGameDay, getTimeOfDay, formatRealTime, getGameTime } from "../utils/time.js";
@@ -15,6 +15,8 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
   const [gameDay, setGameDay] = useState(1);
   const [realTime, setRealTime] = useState(new Date());
   const [isMoneyAnimating, setIsMoneyAnimating] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const audioRef = useRef(null);
   
   // ✅ ข้อ 5: useSelector จาก Redux (15%)
   const money = useSelector((state) => state.farm.money);
@@ -50,6 +52,23 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
     return () => clearTimeout(timeout);
   }, [money]);
 
+  const toggleMusic = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    try {
+      if (isMusicPlaying) {
+        audio.pause();
+        setIsMusicPlaying(false);
+      } else {
+        audio.volume = 0.35;
+        await audio.play();
+        setIsMusicPlaying(true);
+      }
+    } catch (e) {
+      // เงียบไว้ถ้าเบราว์เซอร์บล็อก autoplay
+    }
+  };
+
   // กำหนดสีเงินตามจำนวน
   const getMoneyColor = () => {
   
@@ -70,6 +89,14 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
       zIndex: 1000,
       padding: '12px 20px'
     }}>
+      {/* Hidden audio element for background music */}
+      <audio
+        ref={audioRef}
+        src="/ConcernedApe-Stardew-Valley-OST.mp3"
+        loop
+        preload="auto"
+        style={{ display: 'none' }}
+      />
       <div style={{
         maxWidth: '1280px',
         margin: '0 auto',
@@ -180,6 +207,33 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
           display: 'flex',
           gap: '8px'
         }}>
+          {/* 🎵 ปุ่มเปิด/ปิดเพลง */}
+          <button
+            onClick={toggleMusic}
+            title={isMusicPlaying ? 'หยุดเพลง' : 'เล่นเพลง'}
+            style={{
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              backdropFilter: 'blur(10px)',
+              fontSize: '14px'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.3)';
+              e.target.style.transform = 'scale(1.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255,255,255,0.2)';
+              e.target.style.transform = 'scale(1)';
+            }}
+          >
+            {isMusicPlaying ? '🔊 ดนตรี' : '🔈 ดนตรี'}
+          </button>
           {/* 📚 ปุ่มช่วยเหลือ */}
           <button
             onClick={onHelpClick}
