@@ -1,5 +1,6 @@
 // src/components/Menu.jsx
 import React, { useState } from 'react';
+import { Home, Store, LineChart, ClipboardList, Factory, Backpack, BarChart3, Check, ArrowRight, X } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { useSelector, useDispatch } from 'react-redux'; // ✅ ข้อ 5: Redux hooks (15%)
 import { setPage, resetGame } from '../state/farmSlice.js';
@@ -45,25 +46,53 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
   const menuItems = [
     { 
       id: 'farm', 
-      label: '🌾 ฟาร์ม', 
+      label: 'ฟาร์ม', 
       description: 'ปลูกพืชและเก็บเกี่ยว',
     },
     { 
       id: 'shop', 
-      label: '🏪 ร้านค้า', 
+      label: 'ร้านค้า', 
       description: 'ซื้อเมล็ดพันธุ์และอุปกรณ์',
     },
     { 
+      id: 'market', 
+      label: 'ตลาด', 
+      description: 'ดูราคาและเทรนด์สินค้า',
+    },
+    { 
+      id: 'contracts', 
+      label: 'สัญญา', 
+      description: 'รับงานและส่งมอบสินค้า',
+    },
+    { 
+      id: 'crafting', 
+      label: 'โรงงาน', 
+      description: 'แปรรูปสินค้าและทำอาหาร',
+    },
+    { 
       id: 'inventory', 
-      label: '🎒 กระเป๋า', 
+      label: 'กระเป๋า', 
       description: `ดูของที่มีอยู่ (${totalItems} ชิ้น)`,
     },
     { 
       id: 'stats', 
-      label: '📊 สถิติ', 
+      label: 'สถิติ', 
       description: 'ดูความคืบหน้าและผลงาน',
     },
   ];
+
+  const renderIcon = (id) => {
+    switch (id) {
+      case 'farm': return <Home size={20} style={{ marginRight: 10 }} />;
+      case 'shop': return <Store size={20} style={{ marginRight: 10 }} />;
+      case 'market': return <LineChart size={20} style={{ marginRight: 10 }} />;
+      case 'contracts': return <ClipboardList size={20} style={{ marginRight: 10 }} />;
+      case 'crafting': return <Factory size={20} style={{ marginRight: 10 }} />;
+      case 'inventory': return <Backpack size={20} style={{ marginRight: 10 }} />;
+      case 'stats': return <BarChart3 size={20} style={{ marginRight: 10 }} />;
+      default: return null;
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -98,9 +127,9 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0 }}>🎮 เมนูเกม</h2>
+              <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0 }}>เมนูเกม</h2>
               <p style={{ color: 'rgba(255,255,255,0.9)', marginTop: '4px', marginBottom: 0 }}>
-                วันที่ {day} | 💰 ฿{money.toLocaleString()}
+                วันที่ {day} | ฿{money.toLocaleString()}
               </p>
             </div>
             <button
@@ -123,7 +152,7 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
                 e.target.style.transform = 'rotate(0deg)';
               }}
             >
-              ✕
+              <X size={18} />
             </button>
           </div>
         </div>
@@ -157,8 +186,8 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>
-                    {item.label}
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center' }}>
+                    {renderIcon(item.id)} {item.label}
                   </div>
                   <div style={{ 
                     fontSize: '14px', 
@@ -167,9 +196,9 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
                     {item.description}
                   </div>
                 </div>
-                {currentPage === item.id && <span style={{ fontSize: '24px' }}>✓</span>}
+                {currentPage === item.id && <Check size={22} />}
                 {hoveredItem === item.id && currentPage !== item.id && (
-                  <span style={{ fontSize: '24px', color: '#10b981' }}>→</span>
+                  <ArrowRight size={22} color="#10b981" />
                 )}
               </div>
             </button>
