@@ -1,5 +1,6 @@
 // src/components/StatusBar.jsx
 import React, { useState, useEffect, useRef } from "react";
+import { Wallet, Calendar as CalendarIcon, Sun, Moon, HelpCircle, Menu as MenuIcon, LogOut, Music as MusicIcon, VolumeX } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { useSelector } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
 import { getDayNightCycle, getGameDay, getTimeOfDay, formatRealTime, getGameTime } from "../utils/time.js";
@@ -155,7 +156,7 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
           transform: isMoneyAnimating ? 'scale(1.1)' : 'scale(1)',
           backgroundColor: isMoneyAnimating ? 'rgba(250,204,21,0.4)' : 'rgba(255,255,255,0.2)',
         }}>
-          <span style={{ fontSize: '24px' }}>💰</span>
+          <Wallet size={20} />
           <div>
             <div style={{ fontSize: '12px', opacity: 0.8 }}>เงิน</div>
             <div style={{ fontSize: '18px', fontWeight: 'bold', color: getMoneyColor() }}>
@@ -174,7 +175,7 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
           borderRadius: '8px',
           backdropFilter: 'blur(10px)',
         }}>
-          <span style={{ fontSize: '24px' }}>📅</span>
+          <CalendarIcon size={20} />
           <div>
             <div style={{ fontSize: '12px', opacity: 0.8 }}>วันที่</div>
             <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
@@ -193,7 +194,7 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
           borderRadius: '8px',
           backdropFilter: 'blur(10px)',
         }}>
-          <span style={{ fontSize: '24px' }}>{timeData.emoji}</span>
+          {dayNight === 'night' ? <Moon size={20} /> : <Sun size={20} />}
           <div>
             <div style={{ fontSize: '12px', opacity: 0.8 }}>{timeData.period}</div>
             <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
@@ -232,7 +233,7 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               e.target.style.transform = 'scale(1)';
             }}
           >
-            {isMusicPlaying ? '🔊 ดนตรี' : '🔈 ดนตรี'}
+            {isMusicPlaying ? <MusicIcon size={18} style={{ verticalAlign: 'middle' }} /> : <VolumeX size={18} style={{ verticalAlign: 'middle' }} />}
           </button>
           {/* 📚 ปุ่มช่วยเหลือ */}
           <button
@@ -258,7 +259,7 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               e.target.style.transform = 'scale(1)';
             }}
           >
-            📚 ช่วยเหลือ
+            <HelpCircle size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> ช่วยเหลือ
           </button>
           
           {/* 📋 ปุ่มเมนู */}
@@ -285,7 +286,7 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               e.target.style.transform = 'scale(1)';
             }}
           >
-            📋 เมนู
+            <MenuIcon size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> เมนู
           </button>
           
           {/* 🚪 ปุ่มออกจากเกม */}
@@ -312,7 +313,7 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               e.target.style.transform = 'scale(1)';
             }}
           >
-            🚪 ออก
+            <LogOut size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> ออก
           </button>
         </div>
       </div>
