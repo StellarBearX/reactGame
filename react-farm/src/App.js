@@ -11,7 +11,8 @@ import ContractsPanel from "./components/ContractsPanel.js";
 import CraftingStation from "./components/CraftingStation.js";
 import WelcomeScreen from "./components/WelcomeScreen.js";
 import HelpPanel from "./components/HelpPanel.js";
-import { markWelcomeSeen } from './state/farmSlice.js';
+import { markWelcomeSeen, setPage } from './state/farmSlice.js';
+import { Home, Store as StoreIcon } from 'lucide-react';
 
 const AppContainer = styled.div`
   display: flex;
@@ -299,6 +300,33 @@ function App() {
         {/* ✅ แสดงเนื้อหาตาม currentPage */}
         {renderContent()}
       </MainSection>
+
+      {/* Floating Back/Shop Button */}
+      <button
+        onClick={() => dispatch(setPage(currentPage === 'farm' ? 'shop' : 'farm'))}
+        style={{
+          position: 'fixed',
+          left: '20px',
+          bottom: '20px',
+          zIndex: 1100,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'linear-gradient(to right, #10b981, #059669)',
+          color: 'white',
+          border: 'none',
+          padding: '10px 14px',
+          borderRadius: '999px',
+          boxShadow: '0 10px 15px -3px rgba(0,0,0,0.2)',
+          cursor: 'pointer'
+        }}
+        title={currentPage === 'farm' ? 'ไปที่ร้านค้า' : 'กลับสู่ฟาร์ม'}
+      >
+        {currentPage === 'farm' ? <StoreIcon size={18} /> : <Home size={18} />}
+        <span style={{ fontWeight: 'bold', fontSize: '14px' }}>
+          {currentPage === 'farm' ? 'ร้านค้า' : 'กลับฟาร์ม'}
+        </span>
+      </button>
 
       <Footer>© 2025 Cozy Farm Team | Powered by Redux Toolkit</Footer>
 
