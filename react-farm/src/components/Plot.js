@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux'; // ✅ ข้อ 5: Redu
 import { plantCrop, harvestCrop } from '../state/farmSlice.js';
 import { calculateGrowthProgress, getTimeRemaining, formatTime, isFullyGrown } from "../utils/time.js";
 import { CROPS_DATA } from '../data/crops.js';
+import { playHarvest, playPick } from '../utils/sound.js';
 
 function Plot({ plot }) {
   // ✅ ข้อ 5: useSelector, useDispatch
@@ -28,9 +29,11 @@ function Plot({ plot }) {
     if (!plot.crop && selectedSeed) {
       // ปลูกพืช
       dispatch(plantCrop(plot.id));
+      playPick();
     } else if (plot.crop && grown) {
       // เก็บเกี่ยว
       dispatch(harvestCrop(plot.id));
+      playHarvest();
     }
   };
 

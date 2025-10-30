@@ -3,6 +3,7 @@ import React from "react";
 import { useSelector, useDispatch } from 'react-redux';
 import { CROPS_DATA } from '../data/crops.js';
 import { clearSelectedSeed, selectSeed } from '../state/farmSlice.js';
+import { playPick } from '../utils/sound.js';
 
 function Inventory() {
   const dispatch = useDispatch();
@@ -18,6 +19,7 @@ function Inventory() {
       dispatch(clearSelectedSeed());
     } else {
       dispatch(selectSeed(cropId));
+      playPick();
     }
   };
 
