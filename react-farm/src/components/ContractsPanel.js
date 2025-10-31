@@ -14,6 +14,7 @@ function ContractsPanel() {
   const level = useSelector((state) => state.farm.level);
   
   const [selectedContract, setSelectedContract] = useState(null);
+  const [nextContractCountdown, setNextContractCountdown] = useState('05:00');
   
   const currentDay = getGameDay(gameStartTime);
   
@@ -27,6 +28,33 @@ function ContractsPanel() {
       dispatch(addContract(newContract));
     }
   }, [currentDay, level, contracts.activeContracts.length, contracts.lastContractGeneration, dispatch]);
+
+  // นับถอยหลังสัญญาใหม่
+  useEffect(() => {
+    const format = (ms) => {
+      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+      const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+      const s = (totalSeconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    };
+
+    const update = () => {
+      const windowMs = 5 * 60 * 1000;
+      const elapsed = Date.now() - contracts.lastContractGeneration;
+      const remaining = Math.max(0, windowMs - elapsed);
+      setNextContractCountdown(format(remaining));
+
+      // เมื่อถึงเวลาและยังไม่ครบ 3 สัญญา ให้สร้างสัญญาใหม่ทันที
+      if (remaining === 0 && contracts.activeContracts.length < 3) {
+        const newContract = generateRandomContract(currentDay, level);
+        dispatch(addContract(newContract));
+      }
+    };
+
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [contracts.lastContractGeneration, contracts.activeContracts.length, currentDay, level, dispatch]);
   
   // อัพเดทความคืบหน้าสัญญา
   useEffect(() => {
@@ -137,6 +165,9 @@ function ContractsPanel() {
           </div>
           <div style={{ fontSize: '14px' }}>
             สัญญาใหม่จะปรากฏทุก 5 นาที
+          </div>
+          <div style={{ fontSize: '14px', marginTop: '6px', color: '#0ea5e9', fontWeight: 'bold' }}>
+            อีก {nextContractCountdown}
           </div>
         </div>
       ) : (

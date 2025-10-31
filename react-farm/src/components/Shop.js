@@ -27,7 +27,7 @@ console.log('State ทั้งหมด:', fullState);
   return (
     <div className="shop">
       <h2>🛒 ร้านขายเมล็ด</h2>
-      <p style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>
+      <p style={{ fontSize: 'clamp(12px, 1.5vw, 14px)', color: '#666', marginBottom: '10px' }}>
         💰 เงินของคุณ: ฿{money}
       </p>
       <div className="shop-list">

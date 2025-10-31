@@ -1,6 +1,6 @@
 // src/components/StatusBar.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { Wallet, Calendar as CalendarIcon, Sun, Moon, HelpCircle, Menu as MenuIcon, LogOut, Music as MusicIcon, VolumeX } from 'lucide-react';
+import { Wallet, Calendar as CalendarIcon, Sun, Moon, HelpCircle, Menu as MenuIcon, Music as MusicIcon, VolumeX } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { useSelector } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
 import { getDayNightCycle, getGameDay, getTimeOfDay, formatRealTime, getGameTime } from "../utils/time.js";
@@ -10,7 +10,7 @@ import state from '../state/store.js';
  * StatusBar Component - แสดงสถานะเงิน วัน เวลา
  * ✅ ข้อ 1: Function Component + PropTypes (10%)
  */
-function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
+function StatusBar({ onMenuClick, onHelpClick }) {
   // ✅ ข้อ 4: React Hooks - useState (15%)
   const [dayNight, setDayNight] = useState("day");
   const [gameDay, setGameDay] = useState(1);
@@ -72,10 +72,12 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
 
   // กำหนดสีเงินตามจำนวน
   const getMoneyColor = () => {
-  
-    if (money < 20) return '#dc2626';
-    if (money > 200) return '#16a34a';
-    return '#ca8a04';
+    if (money < 10) return '#dc2626';   // Dark red - critical/danger
+    if (money < 20) return '#f97316';   // Orange - low warning
+    if (money < 50) return '#f59e0b';   // Amber - caution
+    if (money < 100) return '#eab308';  // Yellow - getting better
+    if (money < 200) return '#84cc16';  // Lime - good
+    return '#22c55e';                    // Green - wealthy
   };
 
   return (
@@ -88,7 +90,13 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
       color: 'white',
       boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
       zIndex: 1000,
-      padding: '12px 20px'
+      padding: '8px 0',
+      display: 'flex',
+      justifyContent: 'center',
+      width: '100%',
+      maxWidth: '100vw',
+      boxSizing: 'border-box',
+      overflowX: 'hidden'
     }}>
       {/* Hidden audio element for background music */}
       <audio
@@ -99,69 +107,106 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
         style={{ display: 'none' }}
       />
       <div style={{
-        maxWidth: '1280px',
-        margin: '0 auto',
+        width: '90%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '12px'
+        gap: '8px',
+        rowGap: '8px'
       }}>
         
-        {/* 🎯 Level & XP */}
+        {/* LEFT: Farm Title */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
+          flex: '0 1 auto',
+          minWidth: 'fit-content'
+        }}>
+          <h1 style={{
+            margin: 0,
+            fontSize: window.innerWidth <= 1245 ? '16px' : '20px',
+            fontWeight: 'bold',
+            color: 'white',
+            whiteSpace: 'nowrap'
+          }}>
+            🌾 Cozy Farm Life 🌿
+          </h1>
+        </div>
+
+        {/* MIDDLE: Stats */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: window.innerWidth <= 1245 ? '6px' : '12px',
+          flex: '3 1 auto',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          minWidth: window.innerWidth <= 1245 ? '300px' : '500px'
+        }}>
+          {/* 🧪 Level & XP */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
           background: 'rgba(255,255,255,0.2)',
-          padding: '6px 16px',
+          padding: window.innerWidth <= 1245 ? '6px 12px' : '3px 16px',
           borderRadius: '8px',
           backdropFilter: 'blur(10px)',
-          minWidth: '180px',
+          minWidth: window.innerWidth <= 1245 ? '120px' : '160px'
         }}>
-          <div>
-            <div style={{ fontSize: '12px', opacity: 0.8 }}>Level {level}</div>
-            <div style={{ 
-              background: 'rgba(0,0,0,0.2)', 
-              borderRadius: '4px', 
-              height: '6px', 
-              width: '130px',
-              overflow: 'hidden',
-              marginTop: '4px'
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            minWidth: '100%',
+            marginBottom: '2px'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '2px',
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: window.innerWidth <= 1245 ? '12px' : '14px'
+            }}>
+              <span>Lv {level}</span>
+              <span>{xp}/{maxXp}</span>
+            </div>
+            <div style={{
+              background: 'rgba(255,255,255,0.3)',
+              height: '6px',
+              borderRadius: '9999px',
+              overflow: 'hidden'
             }}>
               <div style={{
-                background: 'linear-gradient(to right, #8b5cf6, #a78bfa)',
                 height: '100%',
-                width: `${(xp / maxXp) * 100}%`,
-                transition: 'width 0.3s ease',
-                borderRadius: '4px',
+                width: `${Math.min(100, Math.max(0, (xp / (maxXp || 1)) * 100))}%`,
+                background: 'linear-gradient(90deg, #a7f3d0, #34d399)',
+                transition: 'width 0.3s ease'
               }}></div>
-            </div>
-            <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '2px' }}>
-              {xp}/{maxXp} XP
             </div>
           </div>
         </div>
-        
-        {/* 💰 เงิน */}
+          {/* 💰 เงิน */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          justifyContent: 'center',
+          gap: '6px',
           background: 'rgba(255,255,255,0.2)',
-          padding: '8px 16px',
+          padding: window.innerWidth <= 1245 ? '6px 12px' : '8px 16px',
           borderRadius: '8px',
           backdropFilter: 'blur(10px)',
           transition: 'all 0.3s',
           transform: isMoneyAnimating ? 'scale(1.1)' : 'scale(1)',
           backgroundColor: isMoneyAnimating ? 'rgba(250,204,21,0.4)' : 'rgba(255,255,255,0.2)',
+          minWidth: window.innerWidth <= 1245 ? '80px' : '110px'
         }}>
-          <Wallet size={20} />
-          <div>
-            <div style={{ fontSize: '12px', opacity: 0.8 }}>เงิน</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', color: getMoneyColor() }}>
-             ฿{money ? money.toLocaleString() : 0}
-            </div>
+          <Wallet size={window.innerWidth <= 1245 ? 14 : 18} />
+          <div style={{ fontSize: window.innerWidth <= 1245 ? '12px' : '15px', fontWeight: 'bold', color: getMoneyColor() }}>
+            ฿{money ? money.toLocaleString() : 0}
           </div>
         </div>
 
@@ -169,44 +214,46 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          justifyContent: 'center',
+          gap: '6px',
           background: 'rgba(255,255,255,0.2)',
-          padding: '8px 16px',
+          padding: window.innerWidth <= 1245 ? '6px 12px' : '8px 16px',
           borderRadius: '8px',
           backdropFilter: 'blur(10px)',
+          minWidth: window.innerWidth <= 1245 ? '80px' : '110px'
         }}>
-          <CalendarIcon size={20} />
-          <div>
-            <div style={{ fontSize: '12px', opacity: 0.8 }}>วันที่</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-              วันที่ {gameDay}
-            </div>
+          <CalendarIcon size={window.innerWidth <= 1245 ? 14 : 18} />
+          <div style={{ fontSize: window.innerWidth <= 1245 ? '12px' : '15px', fontWeight: 'bold' }}>
+            วันที่ {gameDay}
           </div>
         </div>
 
-        {/* 🌅 เวลาในเกม */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          background: 'rgba(255,255,255,0.2)',
-          padding: '8px 16px',
-          borderRadius: '8px',
-          backdropFilter: 'blur(10px)',
-        }}>
-          {dayNight === 'night' ? <Moon size={20} /> : <Sun size={20} />}
-          <div>
-            <div style={{ fontSize: '12px', opacity: 0.8 }}>{timeData.period}</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-              {String(gameHour).padStart(2, '0')}:{String(gameMinute).padStart(2, '0')}
-            </div>
-          </div>
+         {/* 🌅 เวลาในเกม */}
+         <div style={{
+           display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'center',
+           gap: '6px',
+           background: 'rgba(255,255,255,0.2)',
+           padding: window.innerWidth <= 1245 ? '6px 12px' : '8px 16px',
+           borderRadius: '8px',
+           backdropFilter: 'blur(10px)',
+           minWidth: window.innerWidth <= 1245 ? '80px' : '110px'
+         }}>
+           {dayNight === 'night' ? <Moon size={window.innerWidth <= 1245 ? 14 : 18} /> : <Sun size={window.innerWidth <= 1245 ? 14 : 18} />}
+           <div style={{ fontSize: window.innerWidth <= 1245 ? '12px' : '15px', fontWeight: 'bold' }}>
+             {String(gameHour).padStart(2, '0')}:{String(gameMinute).padStart(2, '0')}
+           </div>
+         </div>
         </div>
 
-        {/* ปุ่มควบคุม */}
+        {/* RIGHT: Control Buttons */}
         <div style={{
           display: 'flex',
-          gap: '8px'
+          gap: window.innerWidth <= 1245 ? '4px' : '8px',
+          flex: '0 1 auto',
+          flexWrap: 'wrap',
+          justifyContent: 'flex-end'
         }}>
           {/* 🎵 ปุ่มเปิด/ปิดเพลง */}
           <button
@@ -216,13 +263,13 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               background: 'rgba(255,255,255,0.2)',
               border: 'none',
               color: 'white',
-              padding: '8px 12px',
+              padding: window.innerWidth <= 1245 ? '6px 10px' : '8px 12px',
               borderRadius: '8px',
               fontWeight: 'bold',
               cursor: 'pointer',
               transition: 'all 0.2s',
               backdropFilter: 'blur(10px)',
-              fontSize: '14px'
+              fontSize: window.innerWidth <= 1245 ? '12px' : '14px'
             }}
             onMouseEnter={(e) => {
               e.target.style.background = 'rgba(255,255,255,0.3)';
@@ -233,7 +280,7 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               e.target.style.transform = 'scale(1)';
             }}
           >
-            {isMusicPlaying ? <MusicIcon size={18} style={{ verticalAlign: 'middle' }} /> : <VolumeX size={18} style={{ verticalAlign: 'middle' }} />}
+            {isMusicPlaying ? <MusicIcon size={window.innerWidth <= 1245 ? 14 : 18} style={{ verticalAlign: 'middle' }} /> : <VolumeX size={window.innerWidth <= 1245 ? 14 : 18} style={{ verticalAlign: 'middle' }} />}
           </button>
           {/* 📚 ปุ่มช่วยเหลือ */}
           <button
@@ -242,13 +289,13 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               background: 'rgba(255,255,255,0.2)',
               border: 'none',
               color: 'white',
-              padding: '8px 16px',
+              padding: window.innerWidth <= 1245 ? '6px 10px' : '8px 16px',
               borderRadius: '8px',
               fontWeight: 'bold',
               cursor: 'pointer',
               transition: 'all 0.2s',
               backdropFilter: 'blur(10px)',
-              fontSize: '14px'
+              fontSize: window.innerWidth <= 1245 ? '12px' : '14px'
             }}
             onMouseEnter={(e) => {
               e.target.style.background = 'rgba(255,255,255,0.3)';
@@ -259,7 +306,7 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               e.target.style.transform = 'scale(1)';
             }}
           >
-            <HelpCircle size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> ช่วยเหลือ
+            <HelpCircle size={window.innerWidth <= 1245 ? 14 : 18} style={{ verticalAlign: 'middle', marginRight: window.innerWidth <= 1245 ? 4 : 6 }} /> ช่วยเหลือ
           </button>
           
           {/* 📋 ปุ่มเมนู */}
@@ -269,13 +316,13 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               background: 'rgba(255,255,255,0.2)',
               border: 'none',
               color: 'white',
-              padding: '8px 16px',
+              padding: window.innerWidth <= 1245 ? '6px 10px' : '8px 16px',
               borderRadius: '8px',
               fontWeight: 'bold',
               cursor: 'pointer',
               transition: 'all 0.2s',
               backdropFilter: 'blur(10px)',
-              fontSize: '14px'
+              fontSize: window.innerWidth <= 1245 ? '12px' : '14px'
             }}
             onMouseEnter={(e) => {
               e.target.style.background = 'rgba(255,255,255,0.3)';
@@ -286,35 +333,9 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
               e.target.style.transform = 'scale(1)';
             }}
           >
-            <MenuIcon size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> เมนู
+            <MenuIcon size={window.innerWidth <= 1245 ? 14 : 18} style={{ verticalAlign: 'middle', marginRight: window.innerWidth <= 1245 ? 4 : 6 }} /> เมนู
           </button>
           
-          {/* 🚪 ปุ่มออกจากเกม */}
-          <button
-            onClick={onExitClick}
-            style={{
-              background: 'rgba(220, 38, 38, 0.2)',
-              border: 'none',
-              color: 'white',
-              padding: '8px 16px',
-              borderRadius: '8px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              backdropFilter: 'blur(10px)',
-              fontSize: '14px'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(220, 38, 38, 0.3)';
-              e.target.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(220, 38, 38, 0.2)';
-              e.target.style.transform = 'scale(1)';
-            }}
-          >
-            <LogOut size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> ออก
-          </button>
         </div>
       </div>
     </div>
@@ -325,7 +346,6 @@ function StatusBar({ onMenuClick, onHelpClick, onExitClick }) {
 StatusBar.propTypes = {
   onMenuClick: PropTypes.func.isRequired,
   onHelpClick: PropTypes.func.isRequired,
-  onExitClick: PropTypes.func.isRequired,
 };
 
 export default StatusBar;

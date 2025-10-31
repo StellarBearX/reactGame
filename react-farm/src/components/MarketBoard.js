@@ -52,8 +52,8 @@ function MarketBoard() {
   const getTrendIcon = (trend) => {
     if (!trend) return '➖';
     switch (trend.direction) {
-      case 'up': return '📈';
-      case 'down': return '📉';
+      case 'up': return '📈 +';
+      case 'down': return '📉 -';
       default: return '➖';
     }
   };
@@ -103,7 +103,7 @@ function MarketBoard() {
         }}>
           📊 ตลาด
         </h2>
-        <button
+        {/* <button
           onClick={() => setIsExpanded(!isExpanded)}
           style={{
             background: '#f59e0b',
@@ -117,7 +117,7 @@ function MarketBoard() {
           }}
         >
           {isExpanded ? 'ย่อ' : 'ขยาย'}
-        </button>
+        </button> */}
       </div>
       
       {/* ข้อมูลฤดูกาลและเหตุการณ์ */}
@@ -177,22 +177,25 @@ function MarketBoard() {
           const priceChangePercent = ((priceChange / basePrice) * 100).toFixed(1);
           
           return (
-            <div key={cropId} style={{
-              background: 'white',
-              borderRadius: '12px',
-              padding: '16px',
-              border: '2px solid #e5e7eb',
-              transition: 'all 0.2s',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'scale(1.02)';
-              e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'scale(1)';
-              e.target.style.boxShadow = 'none';
-            }}>
+            <div 
+              key={cropId} 
+              style={{
+                background: 'white',
+                borderRadius: '12px',
+                padding: '16px',
+                border: '2px solid #e5e7eb',
+                cursor: 'pointer',
+                boxShadow: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.setProperty('transform', 'scale(1.02)', 'important');
+                e.currentTarget.style.setProperty('box-shadow', 'none', 'important');
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.setProperty('transform', 'scale(1)', 'important');
+                e.currentTarget.style.setProperty('box-shadow', 'none', 'important');
+              }}
+            >
               <div style={{
                 display: 'flex',
                 alignItems: 'center',

@@ -32,12 +32,15 @@ export const CRAFTING_STATIONS = {
 
 export const PROCESSED_ITEMS = {
   // ผลิตภัณฑ์จากโรงสี
+  // Profit = Revenue - Cost (using base prices: wheat=10, corn=150)
+  // Target: 10-12% profit margin for simple processing (modest but worthwhile)
   flour: {
     id: 'flour',
     name: 'แป้ง',
     emoji: '🌾',
     description: 'แป้งข้าวสาลีคุณภาพดี',
-    basePrice: 25,
+    // Cost: 3x wheat = 30, Target 10% margin → 30 * 1.10 = 33
+    basePrice: 33,
     category: 'processed',
     station: 'mill'
   },
@@ -47,18 +50,22 @@ export const PROCESSED_ITEMS = {
     name: 'แป้งข้าวโพด',
     emoji: '🌽',
     description: 'แป้งข้าวโพดสำหรับทำขนม',
-    basePrice: 30,
+    // Cost: 2x corn = 300, Target 12% margin → 300 * 1.12 = 336 → 335
+    basePrice: 335,
     category: 'processed',
     station: 'mill'
   },
   
   // ผลิตภัณฑ์จากครัว
+  // Profit calculations: tomato=150, carrot=45, corn=150, pumpkin=450, flour=33
+  // Target: 12-15% profit margin for food items (reasonable for time investment)
   tomato_sauce: {
     id: 'tomato_sauce',
     name: 'ซอสมะเขือเทศ',
     emoji: '🍅',
     description: 'ซอสมะเขือเทศทำเอง',
-    basePrice: 80,
+    // Cost: 4x tomato = 600, Target 13% margin → 600 * 1.13 = 678 → 680
+    basePrice: 680,
     category: 'processed',
     station: 'kitchen'
   },
@@ -68,7 +75,8 @@ export const PROCESSED_ITEMS = {
     name: 'น้ำแครอท',
     emoji: '🥕',
     description: 'น้ำแครอทสด 100%',
-    basePrice: 60,
+    // Cost: 3x carrot = 135, Target 13% margin → 135 * 1.13 = 152.55 → 150
+    basePrice: 150,
     category: 'processed',
     station: 'kitchen'
   },
@@ -78,7 +86,8 @@ export const PROCESSED_ITEMS = {
     name: 'พายฟักทอง',
     emoji: '🥧',
     description: 'พายฟักทองอบสด',
-    basePrice: 200,
+    // Cost: 1x pumpkin + 2x flour = 450 + 66 = 516, Target 15% margin → 516 * 1.15 = 593.4 → 595
+    basePrice: 595,
     category: 'processed',
     station: 'kitchen'
   },
@@ -88,7 +97,8 @@ export const PROCESSED_ITEMS = {
     name: 'ขนมปังข้าวโพด',
     emoji: '🍞',
     description: 'ขนมปังข้าวโพดนุ่ม',
-    basePrice: 120,
+    // Cost: 2x cornmeal + 1x flour = 670 + 33 = 703, Target 12% margin → 703 * 1.12 = 787.36 → 785
+    basePrice: 785,
     category: 'processed',
     station: 'kitchen'
   },
@@ -98,9 +108,24 @@ export const PROCESSED_ITEMS = {
     name: 'สลัดผักรวม',
     emoji: '🥗',
     description: 'สลัดผักสดหลากชนิด',
-    basePrice: 150,
+    // Cost: 2x tomato + 2x carrot + 1x corn = 300 + 90 + 150 = 540, Target 13% margin → 540 * 1.13 = 610.2 → 610
+    basePrice: 610,
     category: 'processed',
     station: 'kitchen'
+  },
+  
+  // ผลิตภัณฑ์จากโรงงาน
+  // Cost: 5x wheat + 5x carrot + 3x corn = 50 + 225 + 450 = 725
+  // Target: 15% profit margin for special tools (slightly higher for complexity)
+  fertilizer: {
+    id: 'fertilizer',
+    name: 'ปุ๋ย',
+    emoji: '🌱',
+    description: 'ปุ๋ยคุณภาพดีสำหรับเพิ่มผลผลิต',
+    // Cost: 725, Target 15% margin → 725 * 1.15 = 833.75 → 835
+    basePrice: 835,
+    category: 'tool',
+    station: 'workshop'
   }
 };
 
@@ -222,6 +247,25 @@ export const RECIPES = {
     xpReward: 100,
     unlockLevel: 7,
     emoji: '🥗'
+  },
+  
+  // สูตรโรงงาน
+  fertilizer_recipe: {
+    id: 'fertilizer_recipe',
+    name: 'ทำปุ๋ย',
+    station: 'workshop',
+    inputs: {
+      wheat: 5,
+      carrot: 5,
+      corn: 3
+    },
+    outputs: {
+      fertilizer: 1
+    },
+    craftingTime: 75000, // 75 วินาที
+    xpReward: 180,
+    unlockLevel: 8,
+    emoji: '🌱'
   }
 };
 
@@ -241,14 +285,17 @@ export function canCraftRecipe(recipeId, inventory) {
   return true;
 }
 
-// คำนวณต้นทุนการผลิต
+// คำนวณต้นทุนการผลิต (ราคาของวัตถุดิบถ้าขายตรงๆ ในตลาด ตามราคาตลาดแบบ dynamic)
 export function calculateCraftingCost(recipeId, marketPrices) {
   const recipe = RECIPES[recipeId];
   if (!recipe) return 0;
   
   let totalCost = 0;
   for (const [itemId, requiredAmount] of Object.entries(recipe.inputs)) {
-    const itemPrice = marketPrices[itemId] || 0;
+    // ใช้ราคาตลาด (สำหรับพืชผล) หรือ basePrice (สำหรับของแปรรูป) ถ้าไม่มีราคาตลาด
+    const itemPrice = marketPrices[itemId] || 
+                      PROCESSED_ITEMS[itemId]?.basePrice || 
+                      0;
     totalCost += itemPrice * requiredAmount;
   }
   
@@ -256,18 +303,22 @@ export function calculateCraftingCost(recipeId, marketPrices) {
 }
 
 // คำนวณกำไรจากการขายผลิตภัณฑ์
+// กำไร = (มูลค่าสินค้าที่ผลิตได้ถ้าขายในตลาด) - (มูลค่าวัตถุดิบถ้าขายตรงๆ ในตลาด)
 export function calculateCraftingProfit(recipeId, marketPrices) {
   const recipe = RECIPES[recipeId];
   if (!recipe) return 0;
   
+  // ต้นทุน = ราคาของวัตถุดิบถ้าขายตรงๆ ในตลาด (ตามราคา dynamic)
   const cost = calculateCraftingCost(recipeId, marketPrices);
   
+  // รายได้ = ราคาของสินค้าที่ผลิตได้ถ้าขายในตลาด (ตามราคา dynamic)
   let revenue = 0;
   for (const [itemId, producedAmount] of Object.entries(recipe.outputs)) {
     const itemPrice = marketPrices[itemId] || PROCESSED_ITEMS[itemId]?.basePrice || 0;
     revenue += itemPrice * producedAmount;
   }
   
+  // กำไร = รายได้ - ต้นทุน (อาจเป็นลบถ้าขายวัตถุดิบดีกว่า)
   return revenue - cost;
 }
 

@@ -1,11 +1,16 @@
 // src/components/Plot.jsx
 import React, { useEffect, useState } from "react";
+import PropTypes from 'prop-types';
 import { useSelector, useDispatch } from 'react-redux'; // ✅ ข้อ 5: Redux hooks (15%)
 import { plantCrop, harvestCrop } from '../state/farmSlice.js';
 import { calculateGrowthProgress, getTimeRemaining, formatTime, isFullyGrown } from "../utils/time.js";
 import { CROPS_DATA } from '../data/crops.js';
 import { playHarvest, playPick } from '../utils/sound.js';
 
+/**
+ * Plot Component - แสดงแปลงปลูกพืช
+ * ✅ ข้อ 1: Function Component + PropTypes (10%)
+ */
 function Plot({ plot }) {
   // ✅ ข้อ 5: useSelector, useDispatch
   const dispatch = useDispatch();
@@ -56,12 +61,21 @@ function Plot({ plot }) {
     >
       <div>{crop.icon} {crop.name}</div>
       {grown ? (
-        <span>✨ เก็บเกี่ยวได้!</span>
+        <span>เก็บเกี่ยวได้!</span>
       ) : (
         <span>{progress.toFixed(0)}% ({formatTime(timeLeft)})</span>
       )}
     </div>
   );
 }
+
+Plot.propTypes = {
+  plot: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    crop: PropTypes.string,
+    plantedAt: PropTypes.number,
+    isGrown: PropTypes.bool
+  }).isRequired
+};
 
 export default Plot;

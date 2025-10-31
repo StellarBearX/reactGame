@@ -66,7 +66,7 @@ export const SAMPLE_CONTRACTS = [
     },
     deadline: 3, // จำนวนวัน
     rewards: [
-      { type: 'money', amount: 500 },
+      { type: 'money', amount: 2500 }, // Increased from 500
       { type: 'xp', amount: 100 }
     ],
     difficulty: 'easy',
@@ -103,7 +103,7 @@ export const SAMPLE_CONTRACTS = [
     },
     deadline: 4,
     rewards: [
-      { type: 'money', amount: 1200 },
+      { type: 'money', amount: 2500 }, // Increased from 1200
       { type: 'xp', amount: 200 }
     ],
     difficulty: 'medium',
@@ -120,7 +120,7 @@ export const SAMPLE_CONTRACTS = [
     },
     deadline: 6,
     rewards: [
-      { type: 'money', amount: 2000 },
+      { type: 'money', amount: 4000 }, // Increased from 2000
       { type: 'xp', amount: 300 },
       { type: 'items', item: 'special_pumpkin_seed', amount: 3 }
     ],
@@ -164,31 +164,31 @@ export function generateRandomContract(gameDay, playerLevel = 1) {
 
 // ตรวจสอบความคืบหน้าสัญญา
 export function updateContractProgress(contract, inventory) {
-  const updatedContract = { ...contract };
+  // สร้าง progress ใหม่เพื่อหลีกเลี่ยงการแก้ไข object ที่ถูก freeze
+  const newProgress = {};
   let totalProgress = 0;
   let totalRequired = 0;
-  
+
   Object.keys(contract.requirements).forEach(itemId => {
     const required = contract.requirements[itemId];
     const available = inventory[itemId] || 0;
     const progress = Math.min(available, required);
-    
-    updatedContract.progress[itemId] = progress;
+
+    newProgress[itemId] = progress;
     totalProgress += progress;
     totalRequired += required;
   });
-  
-  // คำนวณเปอร์เซ็นต์ความคืบหน้า
-  updatedContract.completionPercentage = totalRequired > 0 ? (totalProgress / totalRequired) * 100 : 0;
-  
-  // ตรวจสอบว่าสัญญาเสร็จสิ้นหรือไม่
-  if (updatedContract.completionPercentage >= 100) {
-    updatedContract.status = 'ready_to_complete';
-  } else {
-    updatedContract.status = 'active';
-  }
-  
-  return updatedContract;
+
+  const completionPercentage = totalRequired > 0 ? (totalProgress / totalRequired) * 100 : 0;
+  const status = completionPercentage >= 100 ? 'ready_to_complete' : 'active';
+
+  // คืนค่า contract ใหม่แบบ immutable
+  return {
+    ...contract,
+    progress: newProgress,
+    completionPercentage,
+    status,
+  };
 }
 
 // ตรวจสอบว่าสัญญาหมดอายุหรือไม่

@@ -139,15 +139,17 @@ const farmSlice = createSlice({
         // 🎮 ให้ XP เพียงเล็กน้อยในการปลูก
         state.xp += 5;
         
-        // ✅ ลดเมล็ดในกระเป๋า
+        // ✅ ลดเมล็ดในกระเป๋า และคงสถานะการเลือกจนกว่าจะหมดสต็อก
         if (state.seedInventory[state.selectedSeed] > 0) {
           state.seedInventory[state.selectedSeed] -= 1;
           if (state.seedInventory[state.selectedSeed] === 0) {
             delete state.seedInventory[state.selectedSeed];
+            state.selectedSeed = null; // หมดสต็อก -> ยกเลิกการเลือก
           }
+        } else {
+          // เผื่อกรณีข้อมูลไม่สอดคล้อง ให้ยกเลิกการเลือก
+          state.selectedSeed = null;
         }
-        
-        state.selectedSeed = null;
         
         // ⭐ Level up logic
         if (state.xp >= state.maxXp) {
@@ -167,19 +169,22 @@ const farmSlice = createSlice({
 
       const crop = CROPS_DATA[plot.crop];
       
+      // ใช้ราคาตลาดหรือราคาพื้นฐานถ้าไม่มีราคาตลาด
+      const sellPrice = state.market.currentPrices[plot.crop] || crop.sellPrice;
+      
       // เพิ่มเงิน
-      state.money += crop.sellPrice;
+      state.money += sellPrice;
       
       // 📊 อัพเดทสถิติ
       state.statistics.totalHarvested += 1;
-      state.statistics.totalEarned += crop.sellPrice;
+      state.statistics.totalEarned += sellPrice;
       if (!state.statistics.cropsHarvested[plot.crop]) {
         state.statistics.cropsHarvested[plot.crop] = 0;
       }
       state.statistics.cropsHarvested[plot.crop] += 1;
       
       // 🎮 ให้ XP เมื่อเก็บเกี่ยว (พืชต่างกันให้ XP ต่างกัน)
-      const xpGain = crop.sellPrice * 2;
+      const xpGain = sellPrice * 2;
       state.xp += xpGain;
       
       // ✅ เพิ่มผลผลิตเข้า produceInventory
@@ -200,8 +205,8 @@ const farmSlice = createSlice({
         state.maxXp = Math.floor(100 * Math.pow(1.5, state.level - 2));
         state.xp = excessXp;
         
-      // 🌱 เมื่อถึงเลเวล 10 ให้เพิ่มพื้นที่เพาะปลูก
-      if (state.level % 10 === 0 && state.plots.length < 20) {
+      // 🌱 เมื่อถึงเลเวล 10 ให้เพิ่มพื้นที่เพาะปลูก (ถ้ายังไม่ครบ 12 แปลง)
+      if (state.level % 10 === 0 && state.plots.length < 12) {
         const newPlots = Array(1).fill(null).map((_, i) => ({
         id: state.plots.length + i,
         crop: null,
@@ -223,6 +228,26 @@ const farmSlice = createSlice({
       const plot = state.plots.find(p => p.id === plotId);
       if (plot) {
         plot.isGrown = true;
+      }
+    },
+
+    // ========================================
+    // Plot Expansion
+    // ========================================
+    buyPlot: (state, action) => {
+      const plotPrice = action.payload || 50; // Base price 50
+      const maxPlots = 12; // 4x3 grid
+      
+      if (state.money >= plotPrice && state.plots.length < maxPlots) {
+        state.money -= plotPrice;
+        const newPlot = {
+          id: state.plots.length,
+          crop: null,
+          plantedAt: null,
+          isGrown: false,
+        };
+        state.plots.push(newPlot);
+        state.statistics.totalSpent += plotPrice;
       }
     },
 
@@ -306,6 +331,15 @@ const farmSlice = createSlice({
     // ========================================
     addContract: (state, action) => {
       const contract = action.payload;
+      // Enforce max of 3 active contracts
+      if (state.contracts.activeContracts.length >= 3) {
+        return;
+      }
+      // Prevent duplicate IDs
+      const exists = state.contracts.activeContracts.some(c => c.id === contract.id);
+      if (exists) {
+        return;
+      }
       state.contracts.activeContracts.push(contract);
       state.contracts.lastContractGeneration = Date.now();
     },
@@ -399,10 +433,16 @@ const farmSlice = createSlice({
       const { recipeId, stationId } = action.payload;
       const recipe = action.payload.recipe;
       
+      // Combine raw produce and processed items for checking and consumption
+      const combinedInventory = {
+        ...state.produceInventory,
+        ...state.crafting.processedInventory
+      };
+      
       // ตรวจสอบว่ามีวัตถุดิบครบหรือไม่
       let canCraft = true;
       for (const [itemId, requiredAmount] of Object.entries(recipe.inputs)) {
-        const availableAmount = state.produceInventory[itemId] || 0;
+        const availableAmount = combinedInventory[itemId] || 0;
         if (availableAmount < requiredAmount) {
           canCraft = false;
           break;
@@ -410,11 +450,37 @@ const farmSlice = createSlice({
       }
       
       if (canCraft) {
-        // ลบวัตถุดิบ
+        // ลบวัตถุดิบ (จาก produceInventory หรือ processedInventory)
         for (const [itemId, requiredAmount] of Object.entries(recipe.inputs)) {
-          state.produceInventory[itemId] -= requiredAmount;
-          if (state.produceInventory[itemId] <= 0) {
-            delete state.produceInventory[itemId];
+          // Try to consume from produceInventory first
+          if (state.produceInventory[itemId] && state.produceInventory[itemId] >= requiredAmount) {
+            state.produceInventory[itemId] -= requiredAmount;
+            if (state.produceInventory[itemId] <= 0) {
+              delete state.produceInventory[itemId];
+            }
+          } else if (state.crafting.processedInventory[itemId] && state.crafting.processedInventory[itemId] >= requiredAmount) {
+            // Consume from processedInventory
+            state.crafting.processedInventory[itemId] -= requiredAmount;
+            if (state.crafting.processedInventory[itemId] <= 0) {
+              delete state.crafting.processedInventory[itemId];
+            }
+          } else {
+            // Split consumption between both inventories if needed
+            let remaining = requiredAmount;
+            if (state.produceInventory[itemId]) {
+              const takeFromProduce = Math.min(remaining, state.produceInventory[itemId]);
+              state.produceInventory[itemId] -= takeFromProduce;
+              if (state.produceInventory[itemId] <= 0) {
+                delete state.produceInventory[itemId];
+              }
+              remaining -= takeFromProduce;
+            }
+            if (remaining > 0 && state.crafting.processedInventory[itemId]) {
+              state.crafting.processedInventory[itemId] -= remaining;
+              if (state.crafting.processedInventory[itemId] <= 0) {
+                delete state.crafting.processedInventory[itemId];
+              }
+            }
           }
         }
         
@@ -524,6 +590,47 @@ const farmSlice = createSlice({
         gameStartTime: Date.now(),
       };
     },
+
+    // ========================================
+    // Cheat Codes
+    // ========================================
+    cheatUnlockAll: (state) => {
+      // Max out money
+      state.money = 999999999;
+      
+      // Max out level and XP
+      state.level = 100;
+      state.xp = 0;
+      state.maxXp = 100;
+      
+      // Max out all skills
+      Object.keys(state.skills).forEach(skillType => {
+        state.skills[skillType].level = 100;
+        state.skills[skillType].xp = 0;
+      });
+      
+      // Unlock all crafting stations
+      Object.keys(state.crafting.stations).forEach(stationId => {
+        state.crafting.stations[stationId].unlocked = true;
+        state.crafting.stations[stationId].level = 10;
+      });
+      
+      // Add lots of seeds for all crops
+      Object.keys(CROPS_DATA).forEach(cropId => {
+        if (!state.seedInventory[cropId]) {
+          state.seedInventory[cropId] = 0;
+        }
+        state.seedInventory[cropId] += 100;
+      });
+      
+      // Add lots of produce for all crops
+      Object.keys(CROPS_DATA).forEach(cropId => {
+        if (!state.produceInventory[cropId]) {
+          state.produceInventory[cropId] = 0;
+        }
+        state.produceInventory[cropId] += 100;
+      });
+    },
   },
 });
 
@@ -537,6 +644,7 @@ export const {
   plantCrop,
   harvestCrop,
   markPlotGrown,
+  buyPlot,
   setPage,
   // Market actions
   updateMarketPrices,
@@ -560,6 +668,8 @@ export const {
   toggleHints,
   // Game control
   resetGame,
+  // Cheat codes
+  cheatUnlockAll,
 } = farmSlice.actions;
 
 // ✅ Export reducer

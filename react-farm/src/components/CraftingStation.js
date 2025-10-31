@@ -1,13 +1,15 @@
 // src/components/CraftingStation.js
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { unlockStation, startCrafting, completeCrafting, sellProcessedItem } from '../state/farmSlice.js';
+import { useNavigate } from 'react-router-dom';
+import { startCrafting, completeCrafting, sellProcessedItem } from '../state/farmSlice.js';
 import { CRAFTING_STATIONS, RECIPES, PROCESSED_ITEMS, getAvailableRecipes, canCraftRecipe, calculateCraftingProfit } from '../data/recipes.js';
 import { calculateCurrentPrices } from '../data/market.js';
 import { getGameDay } from '../utils/time.js';
 
 function CraftingStation() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const gameStartTime = useSelector((state) => state.farm.gameStartTime);
   const level = useSelector((state) => state.farm.level);
   const crafting = useSelector((state) => state.farm.crafting);
@@ -16,34 +18,54 @@ function CraftingStation() {
   
   const [selectedStation, setSelectedStation] = useState(null);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
+  // tick state to force re-render for realtime progress/time remaining
+  const [tick, setTick] = useState(0);
   
   const currentDay = getGameDay(gameStartTime);
   
-  // ปลดล็อกสถานีตามระดับ
+  // Default to โรงสี (mill) first when entering the tab, or the first unlocked station
   useEffect(() => {
-    if (level >= 3 && !crafting.stations.mill.unlocked) {
-      dispatch(unlockStation('mill'));
-    }
-    if (level >= 5 && !crafting.stations.kitchen.unlocked) {
-      dispatch(unlockStation('kitchen'));
-    }
-    if (level >= 8 && !crafting.stations.workshop.unlocked) {
-      dispatch(unlockStation('workshop'));
-    }
-  }, [level, crafting.stations, dispatch]);
-  
-  // ตรวจสอบงานที่เสร็จสิ้น
-  useEffect(() => {
-    crafting.craftingQueue.forEach(job => {
-      if (Date.now() - job.startTime >= job.craftingTime) {
-        dispatch(completeCrafting(job.id));
+    if (selectedStation) return;
+    const order = ['mill', 'kitchen', 'workshop'];
+    for (const id of order) {
+      if (crafting.stations[id]?.unlocked) {
+        setSelectedStation(id);
+        return;
       }
-    });
+    }
+  }, [selectedStation, crafting.stations]);
+
+  // Note: Stations are now only unlocked via ShopPage (requires money + level)
+  // Removed automatic unlock - players must purchase from shop
+  
+  // Realtime updater and auto-completion checker for crafting jobs
+  useEffect(() => {
+    if (crafting.craftingQueue.length === 0) return; // no jobs -> no timer
+    const interval = setInterval(() => {
+      // trigger UI refresh for progress/time remaining
+      setTick(prev => (prev + 1) % 1_000_000);
+      // also complete any jobs that have reached their crafting time
+      crafting.craftingQueue.forEach(job => {
+        if (Date.now() - job.startTime >= job.craftingTime) {
+          dispatch(completeCrafting(job.id));
+        }
+      });
+    }, 100);
+    return () => clearInterval(interval);
   }, [crafting.craftingQueue, dispatch]);
   
+  // Combine raw produce and processed items for recipe checking
+  const combinedInventory = {
+    ...produceInventory,
+    ...crafting.processedInventory
+  };
+  
+  const marketPrices = calculateCurrentPrices(currentDay, market.activeEvents).prices;
+  const availableRecipes = getAvailableRecipes(level, combinedInventory, marketPrices);
+
   const handleStartCrafting = (recipeId, stationId) => {
     const recipe = RECIPES[recipeId];
-    if (canCraftRecipe(recipeId, produceInventory)) {
+    if (canCraftRecipe(recipeId, combinedInventory)) {
       dispatch(startCrafting({
         recipeId,
         stationId,
@@ -74,9 +96,6 @@ function CraftingStation() {
     return Math.ceil(remaining / 1000); // แปลงเป็นวินาที
   };
   
-  const marketPrices = calculateCurrentPrices(currentDay, market.activeEvents).prices;
-  const availableRecipes = getAvailableRecipes(level, produceInventory, marketPrices);
-  
   return (
     <div style={{
       background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
@@ -96,59 +115,133 @@ function CraftingStation() {
         🏭 โรงงานแปรรูป
       </h2>
       
-      {/* Station Selection */}
-      <div style={{
-        display: 'flex',
-        gap: '12px',
-        marginBottom: '20px',
-        flexWrap: 'wrap'
-      }}>
-        {Object.entries(CRAFTING_STATIONS).map(([stationId, station]) => {
-          const isUnlocked = crafting.stations[stationId]?.unlocked || false;
-          const canUnlock = level >= station.unlockLevel;
-          
+      {/* Check if any station is unlocked */}
+      {(() => {
+        const unlockedStations = Object.entries(CRAFTING_STATIONS).filter(
+          ([stationId]) => crafting.stations[stationId]?.unlocked
+        );
+        const hasUnlockedStations = unlockedStations.length > 0;
+
+        // If no stations are unlocked, show helpful message
+        if (!hasUnlockedStations) {
           return (
-            <button
-              key={stationId}
-              onClick={() => setSelectedStation(isUnlocked ? stationId : null)}
-              disabled={!isUnlocked && !canUnlock}
-              style={{
-                background: isUnlocked ? station.color : '#e5e7eb',
-                color: isUnlocked ? 'white' : '#9ca3af',
-                border: 'none',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                cursor: isUnlocked ? 'pointer' : 'not-allowed',
-                fontSize: '14px',
+            <div style={{
+              borderRadius: '12px',
+              padding: '32px',
+              textAlign: 'center',
+              marginBottom: '20px'
+            }}>
+              <div style={{
+                fontSize: '64px',
+                marginBottom: '16px'
+              }}>
+                🔒
+              </div>
+              <h3 style={{
+                color: '#374151',
+                fontSize: '20px',
                 fontWeight: 'bold',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s',
-                opacity: isUnlocked ? 1 : 0.6
-              }}
-              onMouseEnter={(e) => {
-                if (isUnlocked) {
+                marginBottom: '12px'
+              }}>
+                ยังไม่มีสถานีที่ปลดล็อค
+              </h3>
+              <p style={{
+                color: '#6b7280',
+                fontSize: '14px',
+                marginBottom: '24px',
+                lineHeight: '1.6'
+              }}>
+                ไปที่ร้านอัปเกรดเพื่อปลดล็อคสถานีแปรรูป<br/>
+                คุณสามารถซื้อโรงสี ครัว และโรงงานได้
+              </p>
+              <button
+                onClick={() => navigate('/shop')}
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}
+                onMouseEnter={(e) => {
                   e.target.style.transform = 'scale(1.05)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (isUnlocked) {
+                  e.target.style.boxShadow = '0 6px 12px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
                   e.target.style.transform = 'scale(1)';
-                }
-              }}
-            >
-              <span>{station.emoji}</span>
-              <span>{station.name}</span>
-              {!isUnlocked && (
-                <span style={{ fontSize: '12px' }}>
-                  (เลเวล {station.unlockLevel})
-                </span>
-              )}
-            </button>
+                  e.target.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+                }}
+              >
+                🛒 ไปที่ร้านอัปเกรด
+              </button>
+            </div>
           );
-        })}
-      </div>
+        }
+
+        // Show station selection buttons if any are unlocked
+        return (
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            marginBottom: '20px',
+            flexWrap: 'wrap'
+          }}>
+            {Object.entries(CRAFTING_STATIONS).map(([stationId, station]) => {
+              const isUnlocked = crafting.stations[stationId]?.unlocked || false;
+              const canUnlock = level >= station.unlockLevel;
+              
+              return (
+                <button
+                  key={stationId}
+                  onClick={() => setSelectedStation(isUnlocked ? stationId : null)}
+                  disabled={!isUnlocked && !canUnlock}
+                  title={!isUnlocked ? 'ไปที่ร้านอัปเกรดเพื่อปลดล็อค' : ''}
+                  style={{
+                    background: isUnlocked ? station.color : '#e5e7eb',
+                    color: isUnlocked ? 'white' : '#9ca3af',
+                    border: 'none',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    cursor: isUnlocked ? 'pointer' : 'not-allowed',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s',
+                    opacity: isUnlocked ? 1 : 0.6
+                  }}
+                  onMouseEnter={(e) => {
+                    if (isUnlocked) {
+                      e.target.style.transform = 'scale(1.05)';
+                    } else {
+                      e.target.style.cursor = 'not-allowed';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (isUnlocked) {
+                      e.target.style.transform = 'scale(1)';
+                    }
+                  }}
+                >
+                  <span>{station.emoji}</span>
+                  <span>{station.name}</span>
+                  {!isUnlocked && (
+                    <span style={{ fontSize: '12px' }}>
+                      (ยังไม่ปลดล็อค)
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
       
       {/* Crafting Queue */}
       {crafting.craftingQueue.length > 0 && (
@@ -214,7 +307,8 @@ function CraftingStation() {
                       background: '#3b82f6',
                       height: '100%',
                       width: `${progress}%`,
-                      transition: 'width 0.3s ease',
+                      transition: 'width 0.1s linear',
+                      willChange: 'width',
                       borderRadius: '4px'
                     }}></div>
                   </div>
@@ -248,28 +342,39 @@ function CraftingStation() {
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
             gap: '12px'
           }}>
-            {availableRecipes
-              .filter(recipe => recipe.station === selectedStation)
+            {Object.values(RECIPES)
+              .filter(r => r.station === selectedStation)
+              .map(r => ({
+                ...r,
+                canCraft: canCraftRecipe(r.id, combinedInventory),
+                profit: calculateCraftingProfit(r.id, marketPrices)
+              }))
+              .sort((a, b) => {
+                if (a.canCraft !== b.canCraft) return a.canCraft ? -1 : 1;
+                return (b.profit || 0) - (a.profit || 0);
+              })
               .map(recipe => {
-                const profit = calculateCraftingProfit(recipe.id, marketPrices);
+                const disabled = !recipe.canCraft;
                 
                 return (
                   <div key={recipe.id} style={{
                     background: '#f9fafb',
                     borderRadius: '8px',
                     padding: '12px',
-                    border: '2px solid #e5e7eb',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    border: `2px solid ${disabled ? '#e5e7eb' : '#cbd5e1'}`,
+                    cursor: disabled ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                    opacity: disabled ? 0.55 : 1
                   }}
-                  onClick={() => setSelectedRecipe(recipe)}
+                  onClick={() => !disabled && setSelectedRecipe(recipe)}
                   onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.02)';
-                    e.target.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+                    if (disabled) return;
+                    e.currentTarget.style.transform = 'scale(1.02)';
+                    e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
                   }}
                   onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                    e.target.style.boxShadow = 'none';
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = 'none';
                   }}>
                     
                     <div style={{
@@ -313,25 +418,27 @@ function CraftingStation() {
                     }}>
                       <div style={{
                         fontSize: '12px',
-                        color: profit >= 0 ? '#16a34a' : '#dc2626',
+                        color: recipe.profit > 0 ? '#16a34a' : '#dc2626',
                         fontWeight: 'bold'
                       }}>
-                        กำไร: ฿{profit}
+                        กำไร: ฿{recipe.profit}
                       </div>
                       <button
+                        disabled={disabled}
                         onClick={(e) => {
                           e.stopPropagation();
+                          if (disabled) return;
                           handleStartCrafting(recipe.id, selectedStation);
                         }}
                         style={{
-                          background: '#3b82f6',
+                          background: disabled ? '#cbd5e1' : '#3b82f6',
                           color: 'white',
                           border: 'none',
                           padding: '6px 12px',
                           borderRadius: '6px',
                           fontSize: '12px',
                           fontWeight: 'bold',
-                          cursor: 'pointer'
+                          cursor: disabled ? 'not-allowed' : 'pointer'
                         }}
                       >
                         เริ่มผลิต
@@ -411,7 +518,7 @@ function CraftingStation() {
                       color: '#16a34a',
                       fontWeight: 'bold'
                     }}>
-                      ฿{price}
+                      ฿{price * amount}
                     </div>
                     <button
                       onClick={() => handleSellProcessedItem(itemId, 1)}

@@ -1,5 +1,6 @@
 // src/components/WelcomeScreen.js
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { Hand, Sprout, Wheat, LineChart, ClipboardList, Factory, Gamepad2 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { setPage } from '../state/farmSlice.js';
@@ -12,44 +13,58 @@ function WelcomeScreen({ onStartGame }) {
     {
       title: "ยินดีต้อนรับสู่ Cozy Farm Life!",
       content: "เกมจำลองการทำฟาร์มที่คุณสามารถปลูกพืช เก็บเกี่ยว และสร้างรายได้",
-   
-      color: "#10b981"
+      color: {
+        primary: "#10b981",
+        secondary: "#059669"
+      }
     },
     {
       title: "การปลูกพืช",
       content: "1. ไปที่ร้านค้าเพื่อซื้อเมล็ดพันธุ์\n2. เลือกเมล็ดที่ต้องการ\n3. คลิกที่แปลงว่างเพื่อปลูก\n4. รอให้พืชเติบโต",
-      
-      color: "#16a34a"
+      color: {
+        primary: "#16a34a",
+        secondary: "#15803d"
+      }
     },
     {
       title: "การเก็บเกี่ยว",
       content: "เมื่อพืชเติบโตเต็มที่ (100%) คลิกที่แปลงเพื่อเก็บเกี่ยวและรับเงิน",
-   
-      color: "#f59e0b"
+      color: {
+        primary: "#f59e0b",
+        secondary: "#d97706"
+      }
     },
     {
       title: "ตลาดและราคา",
       content: "ราคาสินค้าเปลี่ยนแปลงทุกวันตามฤดูกาลและเหตุการณ์พิเศษ ตรวจสอบตลาดก่อนขาย!",
-    
-      color: "#3b82f6"
+      color: {
+        primary: "#3b82f6",
+        secondary: "#2563eb"
+      }
     },
     {
       title: "สัญญาและงาน",
       content: "รับสัญญาส่งสินค้าเพื่อรับรางวัลพิเศษ เงิน และ XP เพิ่มเติม",
- 
-      color: "#0ea5e9"
+      color: {
+        primary: "#0ea5e9",
+        secondary: "#0284c7"
+      }
     },
     {
       title: "โรงงานแปรรูป",
       content: "แปรรูปสินค้าเป็นผลิตภัณฑ์ที่มีมูลค่าสูงกว่า เช่น แป้ง ซอสมะเขือเทศ พายฟักทอง",
-    
-      color: "#8b5cf6"
+      color: {
+        primary: "#8b5cf6",
+        secondary: "#7c3aed"
+      }
     },
     {
       title: "พร้อมเริ่มเล่นแล้ว!",
       content: "กดปุ่มเริ่มเล่นเพื่อเข้าสู่โลกฟาร์มของคุณ",
-
-      color: "#f97316"
+      color: {
+        primary: "#f97316",
+        secondary: "#ea580c"
+      }
     }
   ];
   
@@ -61,8 +76,22 @@ function WelcomeScreen({ onStartGame }) {
     }
   };
   
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+  
   const handleSkip = () => {
     onStartGame();
+  };
+  
+  // Helper function to convert hex to rgba with opacity
+  const hexToRgba = (hex, opacity) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
   };
   
   const currentTutorial = tutorialSteps[currentStep];
@@ -101,7 +130,7 @@ function WelcomeScreen({ onStartGame }) {
         
         {/* Header */}
         <div style={{
-          background: `linear-gradient(135deg, ${currentTutorial.color} 0%, ${currentTutorial.color}dd 100%)`,
+          background: `linear-gradient(135deg, ${currentTutorial.color.primary} 0%, ${currentTutorial.color.primary}dd 100%)`,
           color: 'white',
           padding: '30px',
           textAlign: 'center'
@@ -150,7 +179,7 @@ function WelcomeScreen({ onStartGame }) {
             marginBottom: '16px'
           }}>
             <div style={{
-              background: currentTutorial.color,
+              background: currentTutorial.color.primary,
               height: '100%',
               width: `${((currentStep + 1) / tutorialSteps.length) * 100}%`,
               transition: 'width 0.3s ease',
@@ -197,10 +226,35 @@ function WelcomeScreen({ onStartGame }) {
                 ข้าม
               </button>
               
+              {currentStep > 0 && (
+                <button
+                  onClick={handlePrevious}
+                  style={{
+                    background: hexToRgba(currentTutorial.color.secondary, 0.6),
+                    color: 'white',
+                    border: 'none',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                  }}
+                >
+                  กลับ
+                </button>
+              )}
+              
               <button
                 onClick={handleNext}
                 style={{
-                  background: currentTutorial.color,
+                  background: currentTutorial.color.primary,
                   color: 'white',
                   border: 'none',
                   padding: '10px 24px',
@@ -239,5 +293,9 @@ function WelcomeScreen({ onStartGame }) {
     </div>
   );
 }
+
+WelcomeScreen.propTypes = {
+  onStartGame: PropTypes.func.isRequired
+};
 
 export default WelcomeScreen;

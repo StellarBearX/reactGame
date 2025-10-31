@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { Home, Store, LineChart, ClipboardList, Factory, Backpack, BarChart3, Check, ArrowRight, X } from 'lucide-react';
 import PropTypes from 'prop-types';
-import { useSelector, useDispatch } from 'react-redux'; // ✅ ข้อ 5: Redux hooks (15%)
+import { useSelector, useDispatch } from 'react-redux'; //
+import { Link, useLocation } from 'react-router-dom';
 import { setPage, resetGame } from '../state/farmSlice.js';
 import { getGameDay } from '../utils/time.js';
 
@@ -17,6 +18,7 @@ function Menu({ isOpen, onClose }) {
   
   // ✅ ข้อ 5: Redux - useSelector, useDispatch (15%)
   const dispatch = useDispatch();
+  const location = useLocation();
   const currentPage = useSelector((state) => state.farm.currentPage);
   const money = useSelector((state) => state.farm.money);
   const gameStartTime = useSelector((state) => state.farm.gameStartTime);
@@ -28,7 +30,11 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
   // ✅ คำนวณจำนวนของในกระเป๋า (เมล็ด + เมล็ดที่เลือกอยู่)
   const totalItems = Object.values(seedInventory).reduce((sum, count) => sum + count, 0) 
                  + (selectedSeed ? 1 : 0);
-  // ✅ ข้อ 3: Handle navigation event (15%)
+  
+  // Get active page from URL pathname
+  const activePage = location.pathname.replace('/', '') || 'farm';
+  
+  // ✅ ข้อ 3: Handle navigation event (15%) - Now using Link, but sync Redux on click
   const handleNavigation = (page) => {
     dispatch(setPage(page));
     onClose();
@@ -51,23 +57,8 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
     },
     { 
       id: 'shop', 
-      label: 'ร้านค้า', 
-      description: 'ซื้อเมล็ดพันธุ์และอุปกรณ์',
-    },
-    { 
-      id: 'market', 
-      label: 'ตลาด', 
-      description: 'ดูราคาและเทรนด์สินค้า',
-    },
-    { 
-      id: 'contracts', 
-      label: 'สัญญา', 
-      description: 'รับงานและส่งมอบสินค้า',
-    },
-    { 
-      id: 'crafting', 
-      label: 'โรงงาน', 
-      description: 'แปรรูปสินค้าและทำอาหาร',
+      label: 'ร้านอัปเกรด', 
+      description: 'ซื้อแปลงและปลดล็อกสิ่งของ',
     },
     { 
       id: 'inventory', 
@@ -85,9 +76,6 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
     switch (id) {
       case 'farm': return <Home size={20} style={{ marginRight: 10 }} />;
       case 'shop': return <Store size={20} style={{ marginRight: 10 }} />;
-      case 'market': return <LineChart size={20} style={{ marginRight: 10 }} />;
-      case 'contracts': return <ClipboardList size={20} style={{ marginRight: 10 }} />;
-      case 'crafting': return <Factory size={20} style={{ marginRight: 10 }} />;
       case 'inventory': return <Backpack size={20} style={{ marginRight: 10 }} />;
       case 'stats': return <BarChart3 size={20} style={{ marginRight: 10 }} />;
       default: return null;
@@ -163,46 +151,52 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
           maxHeight: '60vh',
           overflowY: 'auto'
         }}>
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => handleNavigation(item.id)}
-              onMouseEnter={() => setHoveredItem(item.id)}
-              onMouseLeave={() => setHoveredItem(null)}
-              style={{
-                width: '100%',
-                textAlign: 'left',
-                padding: '16px',
-                marginBottom: '12px',
-                borderRadius: '12px',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                background: currentPage === item.id ? '#10b981' : '#f3f4f6',
-                color: currentPage === item.id ? 'white' : '#111827',
-                transform: hoveredItem === item.id ? 'scale(1.05)' : 'scale(1)',
-                boxShadow: currentPage === item.id ? '0 10px 15px -3px rgba(0,0,0,0.1)' : 'none',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center' }}>
-                    {renderIcon(item.id)} {item.label}
+          {menuItems.map((item) => {
+            const isActive = activePage === item.id;
+            return (
+              <Link
+                key={item.id}
+                to={`/${item.id}`}
+                onClick={() => handleNavigation(item.id)}
+                onMouseEnter={() => setHoveredItem(item.id)}
+                onMouseLeave={() => setHoveredItem(null)}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '16px',
+                  marginBottom: '12px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  background: isActive ? '#10b981' : '#f3f4f6',
+                  color: isActive ? 'white' : '#111827',
+                  transform: hoveredItem === item.id ? 'scale(1.05)' : 'scale(1)',
+                  boxShadow: isActive ? '0 10px 15px -3px rgba(0,0,0,0.1)' : 'none',
+                  textDecoration: 'none',
+                  display: 'block'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center' }}>
+                      {renderIcon(item.id)} {item.label}
+                    </div>
+                    <div style={{ 
+                      fontSize: '14px', 
+                      color: isActive ? 'rgba(255,255,255,0.9)' : '#6b7280' 
+                    }}>
+                      {item.description}
+                    </div>
                   </div>
-                  <div style={{ 
-                    fontSize: '14px', 
-                    color: currentPage === item.id ? 'rgba(255,255,255,0.9)' : '#6b7280' 
-                  }}>
-                    {item.description}
-                  </div>
+                  {isActive && <Check size={22} />}
+                  {hoveredItem === item.id && !isActive && (
+                    <ArrowRight size={22} color="#10b981" />
+                  )}
                 </div>
-                {currentPage === item.id && <Check size={22} />}
-                {hoveredItem === item.id && currentPage !== item.id && (
-                  <ArrowRight size={22} color="#10b981" />
-                )}
-              </div>
-            </button>
-          ))}
+              </Link>
+            );
+          })}
 
           {/* ปุ่มรีเซ็ตเกม */}
           <div style={{ paddingTop: '16px', marginTop: '16px', borderTop: '1px solid #e5e7eb' }}>

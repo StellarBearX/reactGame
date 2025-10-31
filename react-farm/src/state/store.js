@@ -40,7 +40,7 @@ const store = configureStore({
   reducer: {
     farm: farmReducer,
   },
-  preloadedState: persistedState, // ถ้าใช้ persistedState ก็ตรง ๆ farm
+  preloadedState: persistedState ? { farm: persistedState } : undefined,
 });
 store.subscribe(() => {
   saveState(store.getState());
