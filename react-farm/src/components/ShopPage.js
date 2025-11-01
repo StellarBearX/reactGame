@@ -52,7 +52,7 @@ function ShopPage() {
       icon: '🏭',
       title: 'ปลดล็อกโรงสี',
       description: 'แปรรูปพืชเป็นผลิตภัณฑ์\nต้องเลเวล 3+',
-      price: 150, // Based on economy: ~3x tomato seed price
+      price: 1000, // Based on economy: ~3x tomato seed price
       levelRequired: 3,
       canBuy: level >= 3 && money >= 150 && !crafting.stations?.mill?.unlocked,
       unlocked: crafting.stations?.mill?.unlocked,
@@ -63,7 +63,7 @@ function ShopPage() {
       icon: '👨‍🍳',
       title: 'ปลดล็อกครัว',
       description: 'ทำอาหารและสูตรพิเศษ\nต้องเลเวล 5+',
-      price: 250, // Based on economy: ~5x tomato seed price
+      price: 20000, // Based on economy: ~5x tomato seed price
       levelRequired: 5,
       canBuy: level >= 5 && money >= 250 && !crafting.stations?.kitchen?.unlocked,
       unlocked: crafting.stations?.kitchen?.unlocked,
@@ -74,7 +74,7 @@ function ShopPage() {
       icon: '🔨',
       title: 'ปลดล็อกโรงงาน',
       description: 'สร้างสิ่งของและเครื่องมือ\nต้องเลเวล 8+',
-      price: 400, // Based on economy: ~8x tomato seed price, 2x pumpkin seed
+      price: 100000, // Based on economy: ~8x tomato seed price, 2x pumpkin seed
       levelRequired: 8,
       canBuy: level >= 8 && money >= 400 && !crafting.stations?.workshop?.unlocked,
       unlocked: crafting.stations?.workshop?.unlocked,
