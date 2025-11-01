@@ -1,124 +1,250 @@
-// src/state/farmSlice.js
-// ✅ ข้อ 5: Redux Toolkit Slice (15%)
+/**
+ * ============================================
+ * 📁 farmSlice.js - Redux Slice หลักของเกม
+ * ============================================
+ * 
+ * ไฟล์นี้เป็น Redux Slice ที่จัดการ State และ Actions ทั้งหมดของเกม
+ * ใช้ Redux Toolkit's createSlice เพื่อลด boilerplate code
+ * 
+ * หน้าที่หลัก:
+ * 1. กำหนด Initial State ของแอป
+ * 2. สร้าง Reducers (Actions) สำหรับอัพเดท State
+ * 3. Export Actions เพื่อให้ Components เรียกใช้
+ * 4. Export Reducer เพื่อใช้ใน store.js
+ * 
+ * State Structure:
+ * - money: เงินของเล่น
+ * - plots: แปลงปลูก (array of plot objects)
+ * - seedInventory: เมล็ดในกระเป๋า (object: { cropId: count })
+ * - produceInventory: ผลผลิตในกระเป๋า (object: { cropId: count })
+ * - level, xp, maxXp: ระบบเลเวล
+ * - statistics: สถิติการเล่น
+ * - market: ข้อมูลตลาด (ราคา, ฤดูกาล, เหตุการณ์)
+ * - contracts: สัญญาการค้า
+ * - crafting: ระบบแปรรูป
+ * - skills: ระบบทักษะ
+ * - tutorial: ระบบสอนเล่น
+ * 
+ * การเชื่อมโยง:
+ * - store.js: Import reducer นี้ไปใช้
+ * - Components: ใช้ useSelector และ useDispatch เพื่อเข้าถึง State และ Actions
+ * - data/crops.js: ใช้ข้อมูลพืช
+ */
 
-import { createSlice } from '@reduxjs/toolkit';
-import { CROPS_DATA } from '../data/crops.js';
+import { createSlice } from '@reduxjs/toolkit'; // 🔗 Redux Toolkit: ใช้สร้าง Slice
+import { CROPS_DATA } from '../data/crops.js'; // 🔗 ข้อมูลพืชทั้งหมด
 
+/**
+ * INITIAL_STATE: State เริ่มต้นของเกม
+ * 
+ * ใช้เมื่อเริ่มเกมใหม่ หรือ resetGame()
+ * ต้อง match กับ structure ใน store.js (state.farm)
+ */
 const INITIAL_STATE = {
+  // 💰 เงินเริ่มต้น
   money: 5,
+  
+  // 🌾 แปลงปลูก: เริ่มต้น 4 แปลง (สูงสุด 12 แปลง)
   plots: Array(4).fill(null).map((_, i) => ({
     id: i,
-    crop: null,
-    plantedAt: null,
-    isGrown: false,
+    crop: null, // ID ของพืชที่ปลูก (เช่น 'tomato')
+    plantedAt: null, // Timestamp เมื่อปลูก
+    isGrown: false, // พืชเติบโตเต็มที่แล้วหรือยัง
   })),
+  
+  // 📦 กระเป๋า: เก็บผลผลิต (object: { cropId: count })
   produceInventory: {},
+  
+  // 🌱 กระเป๋า: เก็บเมล็ดพันธุ์ (object: { cropId: count })
   seedInventory: {},
+  
+  // ⏰ เวลาเริ่มเกม (ใช้คำนวณวัน/เวลาในเกม)
   gameStartTime: Date.now(),
+  
+  // 🌱 เมล็ดที่เลือกไว้สำหรับปลูก
   selectedSeed: null,
+  
+  // 📄 หน้าที่เปิดอยู่ ('farm', 'shop', 'inventory', 'stats')
   currentPage: 'farm',
+  
   // 🎮 ระบบ XP & Level
-  level: 1,
-  xp: 0,
-  maxXp: 100,
-  // 📊 Statistics
+  level: 1, // เลเวลปัจจุบัน
+  xp: 0, // XP ปัจจุบัน
+  maxXp: 100, // XP ที่ต้องใช้ถึงเลเวลถัดไป
+  
+  // 📊 สถิติการเล่น
   statistics: {
-    totalPlanted: 0,
-    totalHarvested: 0,
-    totalEarned: 0,
-    totalSpent: 0,
-    cropsPlanted: {},
-    cropsHarvested: {},
+    totalPlanted: 0, // ปลูกทั้งหมด
+    totalHarvested: 0, // เก็บเกี่ยวทั้งหมด
+    totalEarned: 0, // รายได้รวม
+    totalSpent: 0, // ใช้จ่ายรวม
+    cropsPlanted: {}, // ปลูกแต่ละชนิด (object: { cropId: count })
+    cropsHarvested: {}, // เก็บเกี่ยวแต่ละชนิด (object: { cropId: count })
   },
-  // 🏪 ระบบตลาด Dynamic Market
+  
+  // 🏪 ระบบตลาด Dynamic Market (ราคาเปลี่ยนแปลงตามฤดูกาลและเหตุการณ์)
   market: {
-    currentPrices: {},
-    previousPrices: {},
-    priceTrends: {},
-    activeEvents: [],
-    currentSeason: 'spring',
-    lastPriceUpdate: Date.now(),
-    marketHistory: []
+    currentPrices: {}, // ราคาปัจจุบัน (object: { cropId: price })
+    previousPrices: {}, // ราคาเมื่อวาน (ใช้คำนวณเทรนด์)
+    priceTrends: {}, // เทรนด์ราคา (up/down/stable)
+    activeEvents: [], // เหตุการณ์ที่กำลังเกิดขึ้น (เช่น 'tomato_shortage')
+    currentSeason: 'spring', // ฤดูกาลปัจจุบัน ('spring', 'summer', 'autumn', 'winter')
+    lastPriceUpdate: Date.now(), // เวลาที่อัพเดทราคาครั้งล่าสุด
+    marketHistory: [] // ประวัติราคา (เก็บ 30 วันล่าสุด)
   },
-  // 📋 ระบบ Trade Contracts
+  
+  // 📋 ระบบ Trade Contracts (สัญญาการค้า)
   contracts: {
-    activeContracts: [],
-    completedContracts: [],
-    contractHistory: [],
-    lastContractGeneration: Date.now()
+    activeContracts: [], // สัญญาที่รับอยู่ (สูงสุด 3 สัญญา)
+    completedContracts: [], // สัญญาที่ทำสำเร็จ
+    contractHistory: [], // ประวัติสัญญา
+    lastContractGeneration: Date.now() // เวลาที่สร้างสัญญาครั้งล่าสุด (ใช้คำนวณสัญญาใหม่)
   },
-  // 🏭 ระบบ Processing & Crafting
+  
+  // 🏭 ระบบ Processing & Crafting (แปรรูปสินค้า)
   crafting: {
     stations: {
-      mill: { unlocked: false, level: 0 },
-      kitchen: { unlocked: false, level: 0 },
-      workshop: { unlocked: false, level: 0 }
+      mill: { unlocked: false, level: 0 }, // โรงสี (ปลดล็อกที่เลเวล 3)
+      kitchen: { unlocked: false, level: 0 }, // ครัว (ปลดล็อกที่เลเวล 5)
+      workshop: { unlocked: false, level: 0 } // โรงงาน (ปลดล็อกที่เลเวล 8)
     },
-    craftingQueue: [],
-    processedInventory: {},
-    recipes: {},
-    craftingHistory: []
+    craftingQueue: [], // คิวงานแปรรูป
+    processedInventory: {}, // สินค้าที่แปรรูปแล้ว (object: { itemId: count })
+    recipes: {}, // สูตรแปรรูป
+    craftingHistory: [] // ประวัติการแปรรูป
   },
-  // 🎯 ระบบ Skills & Perks
+  
+  // 🎯 ระบบ Skills & Perks (ทักษะ)
   skills: {
-    farming: { level: 1, xp: 0, perks: [] },
-    cooking: { level: 1, xp: 0, perks: [] },
-    trading: { level: 1, xp: 0, perks: [] }
+    farming: { level: 1, xp: 0, perks: [] }, // ทักษะการทำฟาร์ม
+    cooking: { level: 1, xp: 0, perks: [] }, // ทักษะการทำอาหาร
+    trading: { level: 1, xp: 0, perks: [] } // ทักษะการค้า
   },
-  // 🎮 ระบบ Tutorial & Help
+  
+  // 🎮 ระบบ Tutorial & Help (สอนเล่น)
   tutorial: {
-    hasSeenWelcome: false,
-    completedTutorials: [],
-    showHints: true
+    hasSeenWelcome: false, // เห็น Welcome Screen แล้วหรือยัง
+    completedTutorials: [], // Tutorial ที่ทำเสร็จแล้ว
+    showHints: true // แสดงคำแนะนำหรือไม่
   }
 };
 
 
+/**
+ * farmSlice: Redux Slice หลัก
+ * 
+ * ใช้ createSlice จาก Redux Toolkit เพื่อ:
+ * 1. สร้าง Reducer และ Actions อัตโนมัติ
+ * 2. ใช้ Immer เพื่อเขียน mutable code (แต่จริงๆ แล้วเป็น immutable)
+ * 3. ลด boilerplate code
+ */
 const farmSlice = createSlice({
-  name: 'farm',
-  initialState: INITIAL_STATE,
+  name: 'farm', // ชื่อของ slice (ใช้ใน DevTools)
+  initialState: INITIAL_STATE, // State เริ่มต้น
   reducers: {
     // ========================================
-    // Money Management
+    // 💰 Money Management - จัดการเงิน
     // ========================================
+    
+    /**
+     * addMoney: เพิ่มเงิน
+     * @param {number} action.payload - จำนวนเงินที่เพิ่ม
+     * 
+     * ใช้เมื่อ: เก็บเกี่ยวพืช, ทำสัญญาสำเร็จ
+     */
     addMoney: (state, action) => {
       state.money += action.payload;
     },
     
+    /**
+     * spendMoney: ใช้เงิน
+     * @param {number} action.payload - จำนวนเงินที่ใช้
+     * 
+     * ใช้เมื่อ: ซื้อเมล็ด, ซื้อแปลง, ปลดล็อกสถานี
+     */
     spendMoney: (state, action) => {
       state.money -= action.payload;
     },
 
     // ========================================
-    // Seed Management
+    // 🌱 Seed Management - จัดการเมล็ดพันธุ์
     // ========================================
+    
+    /**
+     * selectSeed: เลือกเมล็ดสำหรับปลูก
+     * @param {string} action.payload - ID ของเมล็ด (เช่น 'tomato')
+     * 
+     * ใช้เมื่อ: ผู้เล่นเลือกเมล็ดจาก Inventory
+     * 
+     * Flow:
+     * 1. ตั้ง selectedSeed = cropId
+     * 2. เมื่อคลิกแปลงว่าง → ใช้ selectedSeed ปลูก
+     */
     selectSeed: (state, action) => {
       state.selectedSeed = action.payload;
     },
     
+    /**
+     * clearSelectedSeed: ยกเลิกการเลือกเมล็ด
+     * 
+     * ใช้เมื่อ: ผู้เล่นคลิกเมล็ดที่เลือกอยู่ หรือเมล็ดหมด
+     */
     clearSelectedSeed: (state) => {
       state.selectedSeed = null;
     },
 
-    // ✅ แก้ไข: ซื้อเมล็ดแล้วเพิ่มเข้า seedInventory
+    /**
+     * buySeeds: ซื้อเมล็ดพันธุ์
+     * @param {string} action.payload - ID ของเมล็ด (เช่น 'tomato')
+     * 
+     * ใช้เมื่อ: ผู้เล่นซื้อเมล็ดจาก Shop
+     * 
+     * Flow:
+     * 1. ตรวจสอบว่าเงินพอหรือไม่
+     * 2. ลดเงินตาม seedPrice
+     * 3. เพิ่มเมล็ดเข้า seedInventory
+     * 4. เลือกเมล็ดนั้นเป็น selectedSeed อัตโนมัติ
+     * 
+     * 🔗 เรียกจาก: Shop.js
+     */
     buySeeds: (state, action) => {
-  const cropId = action.payload;
-  const crop = CROPS_DATA[cropId];
+      const cropId = action.payload;
+      const crop = CROPS_DATA[cropId]; // 🔗 ดึงข้อมูลพืชจาก CROPS_DATA
 
-  if (state.money >= crop.seedPrice) {
-    state.money -= crop.seedPrice;
-    state.selectedSeed = cropId;
+      if (state.money >= crop.seedPrice) {
+        state.money -= crop.seedPrice; // ลดเงิน
+        state.selectedSeed = cropId; // เลือกเมล็ดที่ซื้อ
 
-    if (!state.seedInventory[cropId]) {
-      state.seedInventory[cropId] = 0;
-    }
-    state.seedInventory[cropId] += 1;
-  }
-},
+        // เพิ่มเมล็ดเข้า seedInventory
+        if (!state.seedInventory[cropId]) {
+          state.seedInventory[cropId] = 0;
+        }
+        state.seedInventory[cropId] += 1;
+      }
+    },
 
     // ========================================
-    // Farming Actions
+    // 🌾 Farming Actions - การทำฟาร์ม
     // ========================================
+    
+    /**
+     * plantCrop: ปลูกพืช
+     * @param {number} action.payload - ID ของแปลง (plot.id)
+     * 
+     * ใช้เมื่อ: ผู้เล่นคลิกแปลงว่าง + มีเมล็ดเลือกอยู่
+     * 
+     * Flow:
+     * 1. ตรวจสอบว่ามี selectedSeed หรือไม่
+     * 2. หาแปลงตาม plotId
+     * 3. ตรวจสอบว่าแปลงว่างหรือไม่
+     * 4. ปลูกพืช: ตั้ง crop, plantedAt, isGrown = false
+     * 5. อัพเดทสถิติ: totalPlanted, cropsPlanted
+     * 6. ให้ XP: 5 XP (เล็กน้อย)
+     * 7. ลดเมล็ดใน seedInventory (ถ้าหมด → ยกเลิกการเลือก)
+     * 8. ตรวจสอบ Level Up
+     * 
+     * 🔗 เรียกจาก: Plot.js
+     */
     plantCrop: (state, action) => {
       const plotId = action.payload;
       if (!state.selectedSeed) return;
