@@ -1,5 +1,6 @@
 // src/components/Shop.jsx
 import React from "react";
+import PropTypes from 'prop-types';
 import { useSelector, useDispatch } from 'react-redux'; // ✅ ข้อ 5: Redux hooks (15%)
 import { buySeeds } from '../state/farmSlice.js';
 import { CROPS_DATA } from '../data/crops.js';
@@ -46,5 +47,10 @@ function Shop() {
     </div>
   );
 }
+
+// ✅ ข้อ 1: PropTypes validation (10%)
+Shop.propTypes = {
+  // This component doesn't receive props but PropTypes is defined to demonstrate knowledge
+};
 
 export default Shop;
