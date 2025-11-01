@@ -1,12 +1,55 @@
-// src/components/ContractsPanel.js
-import React, { useEffect, useState, useRef } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { addContract, updateContractProgress, completeContract, expireContract } from '../state/farmSlice.js';
-import { generateRandomContract, updateContractProgress as updateProgress, isContractExpired, getTimeRemaining } from '../data/contracts.js';
-import { getGameDay } from '../utils/time.js';
-import { CROPS_DATA } from '../data/crops.js';
-import { getContracts, createContract, updateContract, deleteContract } from '../services/api.js';
+/**
+ * ============================================
+ * 📁 ContractsPanel.js - Component สัญญา (Trade Contracts)
+ * ============================================
+ * 
+ * ไฟล์นี้แสดงระบบสัญญาการค้า (Trade Contracts) ที่ผู้เล่นสามารถรับและทำสัญญา
+ * 
+ * หน้าที่หลัก:
+ * 1. แสดงสัญญาที่รับอยู่ (activeContracts) - สูงสุด 3 สัญญา
+ * 2. จัดการการรับสัญญาใหม่ (addContract)
+ * 3. อัพเดทความคืบหน้าสัญญา (updateContractProgress) - Debounced API calls
+ * 4. จัดการการส่งมอบสัญญา (completeContract)
+ * 5. จัดการสัญญาที่หมดอายุ (expireContract)
+ * 6. แสดง Countdown สัญญาใหม่ (5 นาที)
+ * 7. Integrate กับ API (GET, POST, PUT, DELETE)
+ * 
+ * การเชื่อมโยง:
+ * - TabbedSidebar.js: ใช้ใน Tab 'contracts'
+ * - farmSlice.js: เรียกใช้ addContract, updateContractProgress, completeContract, expireContract actions
+ * - contracts.js: สร้างสัญญาใหม่ คำนวณความคืบหน้า ตรวจสอบหมดอายุ
+ * - crops.js: ดึงข้อมูลพืช (แสดงในรายการสัญญา)
+ * - time.js: คำนวณวันในเกม
+ * - api.js: API calls (GET, POST, PUT, DELETE)
+ * - Redux Store: ดึงข้อมูล contracts, produceInventory, level, gameStartTime
+ * 
+ * API Integration:
+ * - GET: โหลดสัญญาจาก API เมื่อ Component Mount
+ * - POST: สร้างสัญญาใหม่เมื่อ countdown สำเร็จ
+ * - PUT: อัพเดทความคืบหน้า (Debounced 500ms)
+ * - DELETE: ลบสัญญาที่หมดอายุ
+ * 
+ * Flow การทำงาน:
+ * 1. โหลดสัญญาจาก API เมื่อ Mount (ครั้งเดียว)
+ * 2. Countdown สัญญาใหม่ (5 นาที) → สร้างสัญญาใหม่เมื่อถึงเวลา
+ * 3. อัพเดทความคืบหน้าทุกครั้งที่ produceInventory เปลี่ยน (Debounced)
+ * 4. ตรวจสอบสัญญาที่หมดอายุและลบทิ้ง
+ * 5. แสดงรายการสัญญา พร้อมความคืบหน้าและปุ่มส่งมอบ
+ */
 
+import React, { useEffect, useState, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux'; // 🔗 Redux Hooks
+import { addContract, updateContractProgress, completeContract, expireContract } from '../state/farmSlice.js'; // 🔗 Redux Actions
+import { generateRandomContract, updateContractProgress as updateProgress, isContractExpired, getTimeRemaining } from '../data/contracts.js'; // 🔗 Contract Data & Functions
+import { getGameDay } from '../utils/time.js'; // 🔗 Utility: คำนวณวันในเกม
+import { CROPS_DATA } from '../data/crops.js'; // 🔗 ข้อมูลพืชทั้งหมด
+import { getContracts, createContract, updateContract, deleteContract } from '../services/api.js'; // 🔗 API Services
+
+/**
+ * ContractsPanel: Component สัญญา (Trade Contracts)
+ * 
+ * แสดงสัญญาที่รับอยู่และจัดการการรับ/ส่งมอบ/หมดอายุ
+ */
 function ContractsPanel() {
   const dispatch = useDispatch();
   const gameStartTime = useSelector((state) => state.farm.gameStartTime);

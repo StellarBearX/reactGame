@@ -1,10 +1,45 @@
-// src/components/WelcomeScreen.js
+/**
+ * ============================================
+ * 📁 WelcomeScreen.js - Component หน้าต้อนรับ
+ * ============================================
+ * 
+ * ไฟล์นี้แสดงหน้าต้อนรับสำหรับผู้เล่นใหม่ (Tutorial/Onboarding)
+ * 
+ * หน้าที่หลัก:
+ * 1. แสดง Tutorial Steps (7 ขั้นตอน)
+ * 2. จัดการการเปลี่ยนขั้นตอน (Next/Previous/Skip)
+ * 3. แสดง Progress Bar
+ * 4. เริ่มเกมเมื่อกด "เริ่มเล่น"
+ * 
+ * การเชื่อมโยง:
+ * - App.js: ใช้แสดงเมื่อยังไม่เห็น Welcome Screen
+ * - farmSlice.js: เรียกใช้ markWelcomeSeen action
+ * - lucide-react: Icons สำหรับแต่ละขั้นตอน
+ * 
+ * Props:
+ * - onStartGame: function - ฟังก์ชันเริ่มเกม (ปิด Welcome Screen)
+ * 
+ * Tutorial Steps:
+ * 1. ยินดีต้อนรับ
+ * 2. การปลูกพืช
+ * 3. การเก็บเกี่ยว
+ * 4. ตลาดและราคา
+ * 5. สัญญาและงาน
+ * 6. โรงงานแปรรูป
+ * 7. พร้อมเริ่มเล่น
+ */
+
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Hand, Sprout, Wheat, LineChart, ClipboardList, Factory, Gamepad2 } from 'lucide-react';
-import { useDispatch } from 'react-redux';
-import { setPage } from '../state/farmSlice.js';
+import { Hand, Sprout, Wheat, LineChart, ClipboardList, Factory, Gamepad2 } from 'lucide-react'; // 🔗 Icon Library
+import { useDispatch } from 'react-redux'; // 🔗 Redux Hook
+import { setPage } from '../state/farmSlice.js'; // 🔗 Redux Action
 
+/**
+ * WelcomeScreen: Component หน้าต้อนรับ
+ * 
+ * @param {Function} onStartGame - ฟังก์ชันเริ่มเกม
+ */
 function WelcomeScreen({ onStartGame }) {
   const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(0);

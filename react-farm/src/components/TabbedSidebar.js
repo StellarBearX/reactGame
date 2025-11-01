@@ -1,11 +1,39 @@
-// src/components/TabbedSidebar.js
+/**
+ * ============================================
+ * 📁 TabbedSidebar.js - Component Sidebar แบบ Tab
+ * ============================================
+ * 
+ * ไฟล์นี้แสดง Sidebar แบบ Tab ที่มี 4 แท็บ:
+ * - 🛒 ร้านค้า (Shop): ซื้อเมล็ดพันธุ์
+ * - 📊 ตลาด (Market): ดูราคาและเทรนด์
+ * - 🏭 โรงงานแปรรูป (Crafting): แปรรูปสินค้า
+ * - 📋 สัญญา (Contracts): รับสัญญาการค้า
+ * 
+ * หน้าที่หลัก:
+ * 1. แสดง Tab Header (ปุ่มเปลี่ยนแท็บ)
+ * 2. แสดง Content ตาม activeTab ที่เลือก
+ * 3. จัดการ State ของ activeTab
+ * 
+ * การเชื่อมโยง:
+ * - App.js: ใช้ใน /farm route (Sidebar)
+ * - Shop.js: Component ร้านขายเมล็ด
+ * - MarketBoard.js: Component ตลาด
+ * - CraftingStation.js: Component โรงงานแปรรูป
+ * - ContractsPanel.js: Component สัญญา
+ * 
+ * Flow การทำงาน:
+ * 1. เริ่มต้น activeTab = 'shop' (ร้านค้า)
+ * 2. เมื่อคลิก Tab → เปลี่ยน activeTab
+ * 3. renderContent() แสดง Component ตาม activeTab
+ */
+
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
-import Shop from './Shop.js';
-import MarketBoard from './MarketBoard.js';
-import CraftingStation from './CraftingStation.js';
-import ContractsPanel from './ContractsPanel.js';
+import styled from 'styled-components'; // 🔗 Styled Components: สำหรับ CSS-in-JS
+import Shop from './Shop.js'; // 🔗 Component: ร้านขายเมล็ด
+import MarketBoard from './MarketBoard.js'; // 🔗 Component: ตลาด
+import CraftingStation from './CraftingStation.js'; // 🔗 Component: โรงงานแปรรูป
+import ContractsPanel from './ContractsPanel.js'; // 🔗 Component: สัญญา
 
 const SidebarContainer = styled.div`
   background: #fff;
@@ -97,6 +125,14 @@ const TabContent = styled.div`
   }
 `;
 
+/**
+ * tabs: ข้อมูลแท็บทั้งหมด
+ * 
+ * แต่ละแท็บมี:
+ * - id: ตัวระบุแท็บ (ใช้ใน switch case)
+ * - label: ข้อความแสดงบนแท็บ
+ * - icon: emoji icon
+ */
 const tabs = [
   { id: 'shop', label: '🛒 ร้านค้า', icon: '🛒' },
   { id: 'market', label: '📊 ตลาด', icon: '📊' },
@@ -104,21 +140,36 @@ const tabs = [
   { id: 'contracts', label: '📋 สัญญา', icon: '📋' }
 ];
 
+/**
+ * TabbedSidebar: Component Sidebar แบบ Tab
+ * 
+ * จัดการการเปลี่ยนแท็บและแสดง Content ตาม activeTab
+ */
 function TabbedSidebar() {
-  const [activeTab, setActiveTab] = useState('shop'); // Default to shop
+  // 🔗 React Hooks: State สำหรับเก็บแท็บที่เปิดอยู่
+  const [activeTab, setActiveTab] = useState('shop'); // เริ่มต้นที่ 'shop' (ร้านค้า)
 
+  /**
+   * renderContent: แสดง Component ตาม activeTab
+   * 
+   * Flow:
+   * 1. ตรวจสอบ activeTab
+   * 2. Return Component ที่เกี่ยวข้อง
+   * 
+   * @returns {JSX.Element} Component ที่ต้องการแสดง
+   */
   const renderContent = () => {
     switch (activeTab) {
       case 'market':
-        return <MarketBoard />;
+        return <MarketBoard />; // 🔗 Component: ตลาด
       case 'shop':
-        return <Shop />;
+        return <Shop />; // 🔗 Component: ร้านขายเมล็ด
       case 'crafting':
-        return <CraftingStation />;
+        return <CraftingStation />; // 🔗 Component: โรงงานแปรรูป
       case 'contracts':
-        return <ContractsPanel />;
+        return <ContractsPanel />; // 🔗 Component: สัญญา
       default:
-        return <Shop />;
+        return <Shop />; // Default: ร้านค้า
     }
   };
 

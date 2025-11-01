@@ -1,14 +1,45 @@
-// src/components/StatusBar.jsx
+/**
+ * ============================================
+ * 📁 StatusBar.js - Component แถบสถานะด้านบน
+ * ============================================
+ * 
+ * ไฟล์นี้แสดงแถบสถานะด้านบน (fixed position) ที่แสดง:
+ * - เงิน (money)
+ * - ระดับและ XP (level, xp/maxXp)
+ * - วันที่ในเกม (gameDay)
+ * - เวลาในเกม (gameTime)
+ * - ปุ่มเมนู, ปุ่มช่วยเหลือ, ปุ่มเพลง
+ * 
+ * หน้าที่หลัก:
+ * 1. แสดงข้อมูลสถานะเกม (เงิน, เลเวล, วัน, เวลา)
+ * 2. จัดการการเปิด/ปิดเมนูและ Help Panel
+ * 3. จัดการการเล่น/หยุดเพลงพื้นหลัง
+ * 4. Animation เมื่อเงินเปลี่ยน
+ * 5. อัพเดท UI ทุก 1 วินาที (เวลาในเกม)
+ * 
+ * การเชื่อมโยง:
+ * - App.js: ใช้ในหน้า Main (props: onMenuClick, onHelpClick)
+ * - Redux Store: ดึงข้อมูล money, level, xp, maxXp, gameStartTime
+ * - time.js: ใช้คำนวณเวลาในเกม (วัน, เวลา, day/night cycle)
+ * - lucide-react: Icons (Wallet, Calendar, Sun, Moon, etc.)
+ * 
+ * Props:
+ * - onMenuClick: ฟังก์ชันเปิดเมนู
+ * - onHelpClick: ฟังก์ชันเปิด Help Panel
+ */
+
 import React, { useState, useEffect, useRef } from "react";
-import { Wallet, Calendar as CalendarIcon, Sun, Moon, HelpCircle, Menu as MenuIcon, Music as MusicIcon, VolumeX } from 'lucide-react';
+import { Wallet, Calendar as CalendarIcon, Sun, Moon, HelpCircle, Menu as MenuIcon, Music as MusicIcon, VolumeX } from 'lucide-react'; // 🔗 Icon Library
 import PropTypes from 'prop-types';
-import { useSelector } from 'react-redux'; // ✅ ข้อ 5: useSelector (15%)
-import { getDayNightCycle, getGameDay, getTimeOfDay, formatRealTime, getGameTime } from "../utils/time.js";
-import state from '../state/store.js';
+import { useSelector } from 'react-redux'; // 🔗 Redux Hook: ดึงข้อมูลจาก Store
+import { getDayNightCycle, getGameDay, getTimeOfDay, formatRealTime, getGameTime } from "../utils/time.js"; // 🔗 Utilities: คำนวณเวลา
+import state from '../state/store.js'; // 🔗 Redux Store (ไม่ได้ใช้แต่ import ไว้)
 
 /**
- * StatusBar Component - แสดงสถานะเงิน วัน เวลา
- * ✅ ข้อ 1: Function Component + PropTypes (10%)
+ * StatusBar: Component แถบสถานะด้านบน
+ * 
+ * @param {Function} onMenuClick - ฟังก์ชันเปิดเมนู
+ * @param {Function} onHelpClick - ฟังก์ชันเปิด Help Panel
  */
 function StatusBar({ onMenuClick, onHelpClick }) {
   // ✅ ข้อ 4: React Hooks - useState (15%)

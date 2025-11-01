@@ -1,12 +1,54 @@
-// src/components/CraftingStation.js
-import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { startCrafting, completeCrafting, sellProcessedItem } from '../state/farmSlice.js';
-import { CRAFTING_STATIONS, RECIPES, PROCESSED_ITEMS, getAvailableRecipes, canCraftRecipe, calculateCraftingProfit } from '../data/recipes.js';
-import { calculateCurrentPrices } from '../data/market.js';
-import { getGameDay } from '../utils/time.js';
+/**
+ * ============================================
+ * 📁 CraftingStation.js - Component โรงงานแปรรูป
+ * ============================================
+ * 
+ * ไฟล์นี้แสดงโรงงานแปรรูปสำหรับแปรรูปสินค้าเป็นผลิตภัณฑ์มูลค่าสูงกว่า
+ * 
+ * หน้าที่หลัก:
+ * 1. แสดงสถานีแปรรูปทั้งหมด (โรงสี, ครัว, โรงงาน)
+ * 2. แสดงสูตรแปรรูปที่ใช้ได้ (Recipes)
+ * 3. จัดการการเริ่มแปรรูป (startCrafting)
+ * 4. แสดงคิวงานแปรรูป (craftingQueue)
+ * 5. จัดการการขายสินค้าที่แปรรูปแล้ว (sellProcessedItem)
+ * 6. Auto-complete งานที่เสร็จแล้ว
+ * 7. อัพเดท Progress แบบ real-time
+ * 
+ * การเชื่อมโยง:
+ * - TabbedSidebar.js: ใช้ใน Tab 'crafting'
+ * - farmSlice.js: เรียกใช้ startCrafting, completeCrafting, sellProcessedItem actions
+ * - recipes.js: ดึงข้อมูลสถานี สูตร และสินค้าแปรรูป
+ * - market.js: คำนวณราคาสำหรับคำนวณกำไร
+ * - time.js: คำนวณวันในเกม
+ * - ShopPage.js: ปลดล็อกสถานี (ซื้อจากร้านอัปเกรด)
+ * - React Router: navigate ไปร้านอัปเกรดถ้ายังไม่ปลดล็อกสถานี
+ * - Redux Store: ดึงข้อมูล crafting, produceInventory, market, level
+ * 
+ * สถานีแปรรูป:
+ * 1. โรงสี (Mill): ปลดล็อกที่เลเวล 3, ราคา 150
+ * 2. ครัว (Kitchen): ปลดล็อกที่เลเวล 5, ราคา 250
+ * 3. โรงงาน (Workshop): ปลดล็อกที่เลเวล 8, ราคา 400
+ * 
+ * Flow การทำงาน:
+ * 1. ตรวจสอบว่ามีสถานีปลดล็อกหรือไม่
+ * 2. ถ้าไม่มี → แสดงข้อความแนะนำไปร้านอัปเกรด
+ * 3. ถ้ามี → แสดงสถานี สูตร และคิวงาน
+ * 4. Auto-complete งานที่เสร็จแล้ว (ตรวจสอบทุก 100ms)
+ */
 
+import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux'; // 🔗 Redux Hooks
+import { useNavigate } from 'react-router-dom'; // 🔗 React Router: Navigation
+import { startCrafting, completeCrafting, sellProcessedItem } from '../state/farmSlice.js'; // 🔗 Redux Actions
+import { CRAFTING_STATIONS, RECIPES, PROCESSED_ITEMS, getAvailableRecipes, canCraftRecipe, calculateCraftingProfit } from '../data/recipes.js'; // 🔗 Crafting Data & Functions
+import { calculateCurrentPrices } from '../data/market.js'; // 🔗 Market: คำนวณราคา
+import { getGameDay } from '../utils/time.js'; // 🔗 Utility: คำนวณวันในเกม
+
+/**
+ * CraftingStation: Component โรงงานแปรรูป
+ * 
+ * แสดงสถานี สูตร และคิวงานแปรรูป
+ */
 function CraftingStation() {
   const dispatch = useDispatch();
   const navigate = useNavigate();

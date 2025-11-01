@@ -1,16 +1,42 @@
-// src/components/Menu.jsx
+/**
+ * ============================================
+ * 📁 Menu.js - Component เมนูหลักของเกม
+ * ============================================
+ * 
+ * ไฟล์นี้แสดงเมนูหลักแบบ Modal สำหรับนำทางระหว่างหน้า
+ * 
+ * หน้าที่หลัก:
+ * 1. แสดงรายการหน้าต่างๆ: ฟาร์ม, ร้านค้า, กระเป๋า, สถิติ
+ * 2. จัดการการนำทางด้วย React Router (Link)
+ * 3. แสดงข้อมูลเกมปัจจุบัน (วัน, เงิน)
+ * 4. จัดการการรีเซ็ตเกม (resetGame)
+ * 5. แสดงสถานะหน้าปัจจุบัน (active page)
+ * 
+ * การเชื่อมโยง:
+ * - App.js: ใช้เป็น Modal (props: isOpen, onClose)
+ * - React Router: ใช้ Link และ useLocation สำหรับ navigation
+ * - farmSlice.js: เรียกใช้ setPage และ resetGame actions
+ * - time.js: ใช้คำนวณวันในเกม (getGameDay)
+ * - Redux Store: ดึงข้อมูล money, currentPage, gameStartTime
+ * 
+ * Props:
+ * - isOpen: boolean - เปิด/ปิดเมนู
+ * - onClose: function - ฟังก์ชันปิดเมนู
+ */
+
 import React, { useState } from 'react';
-import { Home, Store, LineChart, ClipboardList, Factory, Backpack, BarChart3, Check, ArrowRight, X } from 'lucide-react';
+import { Home, Store, LineChart, ClipboardList, Factory, Backpack, BarChart3, Check, ArrowRight, X } from 'lucide-react'; // 🔗 Icon Library
 import PropTypes from 'prop-types';
-import { useSelector, useDispatch } from 'react-redux'; //
-import { Link, useLocation } from 'react-router-dom';
-import { setPage, resetGame } from '../state/farmSlice.js';
-import { getGameDay } from '../utils/time.js';
+import { useSelector, useDispatch } from 'react-redux'; // 🔗 Redux Hooks
+import { Link, useLocation } from 'react-router-dom'; // 🔗 React Router: Navigation
+import { setPage, resetGame } from '../state/farmSlice.js'; // 🔗 Redux Actions
+import { getGameDay } from '../utils/time.js'; // 🔗 Utility: คำนวณวันในเกม
 
 /**
- * Menu Component - เมนูหลักของเกม
- * ✅ ข้อ 1: Function Component + PropTypes (10%)
- * ✅ ข้อ 7: React Router concept - Navigation (10%)
+ * Menu: Component เมนูหลัก
+ * 
+ * @param {boolean} isOpen - เปิด/ปิดเมนู
+ * @param {Function} onClose - ฟังก์ชันปิดเมนู
  */
 function Menu({ isOpen, onClose }) {
   // ✅ ข้อ 4: React Hooks - useState (15%)

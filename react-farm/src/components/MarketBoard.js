@@ -1,12 +1,48 @@
-// src/components/MarketBoard.js
-import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { updateMarketPrices, addMarketEvent, removeMarketEvent } from '../state/farmSlice.js';
-import { calculateCurrentPrices, getCurrentSeason, generateRandomEvent, calculatePriceTrend, MARKET_EVENTS } from '../data/market.js';
-import { CROPS_DATA } from '../data/crops.js';
-import { getGameDay } from '../utils/time.js';
-import { useMarketAPI } from '../hooks/useMarketAPI.js';
+/**
+ * ============================================
+ * 📁 MarketBoard.js - Component ตลาด (Market Board)
+ * ============================================
+ * 
+ * ไฟล์นี้แสดงข้อมูลตลาด Dynamic Market ที่ราคาเปลี่ยนแปลงตามฤดูกาลและเหตุการณ์
+ * 
+ * หน้าที่หลัก:
+ * 1. แสดงราคาสินค้าทั้งหมด (ราคาปัจจุบัน, ราคาพื้นฐาน, เทรนด์)
+ * 2. อัพเดทราคาทุกวันในเกม (ทุก 60 วินาที)
+ * 3. แสดงฤดูกาลปัจจุบัน (Spring, Summer, Autumn, Winter)
+ * 4. แสดงเหตุการณ์พิเศษ (Events) ที่ส่งผลต่อราคา
+ * 5. สร้างเหตุการณ์สุ่ม (30% โอกาส, สูงสุด 2 เหตุการณ์)
+ * 6. ดึงข้อมูลราคาจาก API (ถ้ามี)
+ * 7. อัพเดทราคาทันทีเมื่อเหตุการณ์เปลี่ยน (Dynamic Pricing)
+ * 
+ * การเชื่อมโยง:
+ * - TabbedSidebar.js: ใช้ใน Tab 'market'
+ * - farmSlice.js: เรียกใช้ updateMarketPrices, addMarketEvent, removeMarketEvent actions
+ * - market.js: ใช้คำนวณราคา (calculateCurrentPrices, calculatePriceTrend, generateRandomEvent)
+ * - crops.js: ดึงข้อมูลพืชทั้งหมด (CROPS_DATA)
+ * - time.js: คำนวณวันในเกม (getGameDay)
+ * - useMarketAPI.js: Custom Hook สำหรับดึงข้อมูลราคาจาก API
+ * - Redux Store: ดึงข้อมูล gameStartTime, market, level
+ * 
+ * Flow การทำงาน:
+ * 1. อัพเดทราคาทุกวันในเกม (60 วินาที = 1 วัน)
+ * 2. สร้างเหตุการณ์สุ่ม (30% โอกาส, สูงสุด 2 เหตุการณ์)
+ * 3. อัพเดทราคาทันทีเมื่อเหตุการณ์เปลี่ยน
+ * 4. แสดงราคา เทรนด์ (up/down/stable) และเปอร์เซ็นต์การเปลี่ยนแปลง
+ */
 
+import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux'; // 🔗 Redux Hooks
+import { updateMarketPrices, addMarketEvent, removeMarketEvent } from '../state/farmSlice.js'; // 🔗 Redux Actions
+import { calculateCurrentPrices, getCurrentSeason, generateRandomEvent, calculatePriceTrend, MARKET_EVENTS } from '../data/market.js'; // 🔗 Market Data & Functions
+import { CROPS_DATA } from '../data/crops.js'; // 🔗 ข้อมูลพืชทั้งหมด
+import { getGameDay } from '../utils/time.js'; // 🔗 Utility: คำนวณวันในเกม
+import { useMarketAPI } from '../hooks/useMarketAPI.js'; // 🔗 Custom Hook: ดึงข้อมูลราคาจาก API
+
+/**
+ * MarketBoard: Component ตลาด (Market Board)
+ * 
+ * แสดงราคาสินค้าทั้งหมด พร้อมเทรนด์และเหตุการณ์พิเศษ
+ */
 function MarketBoard() {
   const dispatch = useDispatch();
   const gameStartTime = useSelector((state) => state.farm.gameStartTime);
