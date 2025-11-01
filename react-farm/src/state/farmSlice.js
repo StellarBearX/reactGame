@@ -454,9 +454,9 @@ const farmSlice = createSlice({
         for (const [itemId, requiredAmount] of Object.entries(recipe.inputs)) {
           // Try to consume from produceInventory first
           if (state.produceInventory[itemId] && state.produceInventory[itemId] >= requiredAmount) {
-            state.produceInventory[itemId] -= requiredAmount;
-            if (state.produceInventory[itemId] <= 0) {
-              delete state.produceInventory[itemId];
+          state.produceInventory[itemId] -= requiredAmount;
+          if (state.produceInventory[itemId] <= 0) {
+            delete state.produceInventory[itemId];
             }
           } else if (state.crafting.processedInventory[itemId] && state.crafting.processedInventory[itemId] >= requiredAmount) {
             // Consume from processedInventory

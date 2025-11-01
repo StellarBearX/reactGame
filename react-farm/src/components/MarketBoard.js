@@ -5,6 +5,7 @@ import { updateMarketPrices, addMarketEvent, removeMarketEvent } from '../state/
 import { calculateCurrentPrices, getCurrentSeason, generateRandomEvent, calculatePriceTrend, MARKET_EVENTS } from '../data/market.js';
 import { CROPS_DATA } from '../data/crops.js';
 import { getGameDay } from '../utils/time.js';
+import { useMarketAPI } from '../hooks/useMarketAPI.js';
 
 function MarketBoard() {
   const dispatch = useDispatch();
@@ -16,23 +17,47 @@ function MarketBoard() {
   
   const currentDay = getGameDay(gameStartTime);
   
+  // ✅ GET method - Fetch market data from API via custom hook
+  const { marketData: apiMarketData, loading: marketLoading } = useMarketAPI(currentDay, market.activeEvents);
+  
   // อัพเดทราคาตลาดทุกวัน
   useEffect(() => {
     const shouldUpdatePrices = !market.lastPriceUpdate || 
       (Date.now() - market.lastPriceUpdate) > (60 * 1000); // อัพเดททุก 60 วินาที (1 วันในเกม)
     
     if (shouldUpdatePrices) {
+      // Always recalculate prices with current activeEvents to ensure dynamic pricing works
       const marketData = calculateCurrentPrices(currentDay, market.activeEvents);
       const trends = calculatePriceTrend(marketData.prices, market.previousPrices);
       
       dispatch(updateMarketPrices({
         prices: marketData.prices,
         season: marketData.season,
-        activeEvents: marketData.activeEvents,
+        activeEvents: market.activeEvents,
         trends
       }));
     }
   }, [currentDay, dispatch, market.lastPriceUpdate, market.activeEvents, market.previousPrices]);
+  
+  // อัพเดทราคาทันทีเมื่อ activeEvents เปลี่ยน (สำหรับ dynamic pricing)
+  useEffect(() => {
+    // Skip if prices not initialized yet (wait for main update)
+    if (!market.currentPrices || Object.keys(market.currentPrices).length === 0) {
+      return;
+    }
+    
+    // Recalculate prices with current activeEvents when events change
+    const marketData = calculateCurrentPrices(currentDay, market.activeEvents);
+    const trends = calculatePriceTrend(marketData.prices, market.previousPrices);
+    
+    dispatch(updateMarketPrices({
+      prices: marketData.prices,
+      season: marketData.season,
+      activeEvents: market.activeEvents,
+      trends
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [market.activeEvents]); // Only trigger when events change
   
   // สร้างเหตุการณ์สุ่ม
   useEffect(() => {
@@ -174,7 +199,11 @@ function MarketBoard() {
           const trend = market.priceTrends[cropId];
           const basePrice = crop.sellPrice;
           const priceChange = currentPrice - basePrice;
-          const priceChangePercent = ((priceChange / basePrice) * 100).toFixed(1);
+          const priceChangePercent = basePrice > 0 ? ((priceChange / basePrice) * 100).toFixed(1) : '0.0';
+          
+          // Use price change from base price for display (not trend from previous price)
+          const displayPercentage = Math.abs(parseFloat(priceChangePercent));
+          const displayDirection = priceChange >= 0 ? 'up' : 'down';
           
           return (
             <div 
@@ -238,10 +267,10 @@ function MarketBoard() {
                   alignItems: 'center',
                   gap: '4px',
                   fontSize: '12px',
-                  color: getTrendColor(trend)
+                  color: priceChange >= 0 ? '#16a34a' : '#dc2626'
                 }}>
-                  {getTrendIcon(trend)}
-                  {trend && `${trend.percentage}%`}
+                  {priceChange > 0 ? '📈' : priceChange < 0 ? '📉' : '➖'}
+                  {priceChange !== 0 ? `${priceChange >= 0 ? '+' : ''}${priceChangePercent}%` : '0%'}
                 </div>
               </div>
               

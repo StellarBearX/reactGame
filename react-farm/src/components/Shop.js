@@ -9,14 +9,10 @@ function Shop() {
   const dispatch = useDispatch();
   const selectedSeed = useSelector((state) => state.farm.selectedSeed);
   const money = useSelector((state) => state.farm.money);
-  const fullState = useSelector((state) => state);
-console.log('State ทั้งหมด:', fullState);
 
   // ✅ ข้อ 3: Handle buy event (15%)
   const handleBuySeed = (cropId) => {
     const crop = CROPS_DATA[cropId];
-    console.log('พยายามซื้อเมล็ด:', cropId, crop);
-    console.log('เงินปัจจุบัน:', money);
     if (money >= crop.seedPrice) {
       dispatch(buySeeds(cropId));
     } else {

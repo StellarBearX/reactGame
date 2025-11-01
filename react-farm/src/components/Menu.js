@@ -155,45 +155,45 @@ const selectedSeed = useSelector((state) => state.farm.selectedSeed);
             const isActive = activePage === item.id;
             return (
               <Link
-                key={item.id}
+              key={item.id}
                 to={`/${item.id}`}
-                onClick={() => handleNavigation(item.id)}
-                onMouseEnter={() => setHoveredItem(item.id)}
-                onMouseLeave={() => setHoveredItem(null)}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '16px',
-                  marginBottom: '12px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
+              onClick={() => handleNavigation(item.id)}
+              onMouseEnter={() => setHoveredItem(item.id)}
+              onMouseLeave={() => setHoveredItem(null)}
+              style={{
+                width: '100%',
+                textAlign: 'left',
+                padding: '16px',
+                marginBottom: '12px',
+                borderRadius: '12px',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
                   background: isActive ? '#10b981' : '#f3f4f6',
                   color: isActive ? 'white' : '#111827',
-                  transform: hoveredItem === item.id ? 'scale(1.05)' : 'scale(1)',
+                transform: hoveredItem === item.id ? 'scale(1.05)' : 'scale(1)',
                   boxShadow: isActive ? '0 10px 15px -3px rgba(0,0,0,0.1)' : 'none',
                   textDecoration: 'none',
                   display: 'block'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center' }}>
-                      {renderIcon(item.id)} {item.label}
-                    </div>
-                    <div style={{ 
-                      fontSize: '14px', 
-                      color: isActive ? 'rgba(255,255,255,0.9)' : '#6b7280' 
-                    }}>
-                      {item.description}
-                    </div>
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center' }}>
+                    {renderIcon(item.id)} {item.label}
                   </div>
+                  <div style={{ 
+                    fontSize: '14px', 
+                      color: isActive ? 'rgba(255,255,255,0.9)' : '#6b7280' 
+                  }}>
+                    {item.description}
+                  </div>
+                </div>
                   {isActive && <Check size={22} />}
                   {hoveredItem === item.id && !isActive && (
-                    <ArrowRight size={22} color="#10b981" />
-                  )}
-                </div>
+                  <ArrowRight size={22} color="#10b981" />
+                )}
+              </div>
               </Link>
             );
           })}

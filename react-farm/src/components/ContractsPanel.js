@@ -1,10 +1,11 @@
 // src/components/ContractsPanel.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { addContract, updateContractProgress, completeContract, expireContract } from '../state/farmSlice.js';
 import { generateRandomContract, updateContractProgress as updateProgress, isContractExpired, getTimeRemaining } from '../data/contracts.js';
 import { getGameDay } from '../utils/time.js';
 import { CROPS_DATA } from '../data/crops.js';
+import { getContracts, createContract, updateContract, deleteContract } from '../services/api.js';
 
 function ContractsPanel() {
   const dispatch = useDispatch();
@@ -15,8 +16,60 @@ function ContractsPanel() {
   
   const [selectedContract, setSelectedContract] = useState(null);
   const [nextContractCountdown, setNextContractCountdown] = useState('05:00');
+  const [apiLoading, setApiLoading] = useState(false);
+  const [hasLoadedFromAPI, setHasLoadedFromAPI] = useState(false);
+  
+  // Track last progress to prevent duplicate API calls
+  const lastProgressRef = useRef({});
+  const updateTimeoutRef = useRef({});
   
   const currentDay = getGameDay(gameStartTime);
+  
+  // ✅ GET Method - Load contracts from API on mount (only once)
+  useEffect(() => {
+    // Only load if we haven't loaded yet
+    if (hasLoadedFromAPI) return;
+    
+    const loadContractsFromAPI = async () => {
+      try {
+        setApiLoading(true);
+        const response = await getContracts();
+        
+        if (response && response.data && Array.isArray(response.data)) {
+          // Deduplicate contracts by ID from API response first
+          const uniqueContracts = new Map();
+          response.data.forEach(contract => {
+            // Only keep active contracts that aren't completed/expired
+            if (contract.status !== 'completed' && contract.status !== 'expired' && contract.status !== 'ready_to_complete') {
+              // If ID doesn't exist in Map, add it (this automatically deduplicates)
+              if (!uniqueContracts.has(contract.id)) {
+                uniqueContracts.set(contract.id, contract);
+              }
+            }
+          });
+          
+          // Get current Redux contracts to check against
+          const currentIds = new Set(contracts.activeContracts.map(c => c.id));
+          
+          // Only add contracts that don't exist in Redux yet
+          uniqueContracts.forEach((contract, id) => {
+            if (!currentIds.has(id)) {
+              dispatch(addContract(contract));
+            }
+          });
+        }
+        setHasLoadedFromAPI(true);
+      } catch (error) {
+        console.warn('Failed to load contracts from API, using local state:', error);
+        setHasLoadedFromAPI(true); // Mark as attempted even if failed
+      } finally {
+        setApiLoading(false);
+      }
+    };
+    
+    loadContractsFromAPI();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
   
   // สร้างสัญญาใหม่
   useEffect(() => {
@@ -25,7 +78,20 @@ function ContractsPanel() {
     
     if (shouldGenerateContract) {
       const newContract = generateRandomContract(currentDay, level);
-      dispatch(addContract(newContract));
+      
+      // ✅ POST Method - Create contract via API
+      createContract(newContract)
+        .then((response) => {
+          // Sync to Redux after successful API call
+          if (response && response.data) {
+            dispatch(addContract(response.data));
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to create contract via API, using Redux only:', error);
+          // Fallback to Redux only if API fails
+          dispatch(addContract(newContract));
+        });
     }
   }, [currentDay, level, contracts.activeContracts.length, contracts.lastContractGeneration, dispatch]);
 
@@ -47,7 +113,20 @@ function ContractsPanel() {
       // เมื่อถึงเวลาและยังไม่ครบ 3 สัญญา ให้สร้างสัญญาใหม่ทันที
       if (remaining === 0 && contracts.activeContracts.length < 3) {
         const newContract = generateRandomContract(currentDay, level);
-        dispatch(addContract(newContract));
+        
+        // ✅ POST Method - Create contract via API
+        createContract(newContract)
+          .then((response) => {
+            // Sync to Redux after successful API call
+            if (response && response.data) {
+              dispatch(addContract(response.data));
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to create contract via API, using Redux only:', error);
+            // Fallback to Redux only if API fails
+            dispatch(addContract(newContract));
+          });
       }
     };
 
@@ -56,17 +135,57 @@ function ContractsPanel() {
     return () => clearInterval(id);
   }, [contracts.lastContractGeneration, contracts.activeContracts.length, currentDay, level, dispatch]);
   
-  // อัพเดทความคืบหน้าสัญญา
+  // อัพเดทความคืบหน้าสัญญา (debounced เพื่อลด PUT requests)
   useEffect(() => {
+    // Clear any pending updates
+    Object.values(updateTimeoutRef.current).forEach(timeout => clearTimeout(timeout));
+    updateTimeoutRef.current = {};
+    
     contracts.activeContracts.forEach(contract => {
       const updatedProgress = updateProgress(contract, produceInventory);
-      if (JSON.stringify(updatedProgress.progress) !== JSON.stringify(contract.progress)) {
-        dispatch(updateContractProgress({
-          contractId: contract.id,
-          progress: updatedProgress.progress
-        }));
+      const progressKey = JSON.stringify(updatedProgress.progress);
+      const lastProgressKey = lastProgressRef.current[contract.id];
+      
+      // Only update if progress actually changed
+      if (progressKey !== lastProgressKey && progressKey !== JSON.stringify(contract.progress)) {
+        // Debounce PUT requests (wait 500ms before sending)
+        updateTimeoutRef.current[contract.id] = setTimeout(() => {
+          // Double-check progress hasn't changed during debounce
+          const currentProgress = updateProgress(contract, produceInventory);
+          if (JSON.stringify(currentProgress.progress) === progressKey) {
+            // ✅ PUT Method - Update contract progress via API
+            updateContract(contract.id, {
+              progress: currentProgress.progress,
+              completionPercentage: currentProgress.completionPercentage,
+              status: currentProgress.status
+            })
+              .then((response) => {
+                // Sync to Redux after successful API call
+                if (response && response.data) {
+                  lastProgressRef.current[contract.id] = JSON.stringify(currentProgress.progress);
+                  dispatch(updateContractProgress({
+                    contractId: contract.id,
+                    progress: currentProgress.progress
+                  }));
+                }
+              })
+              .catch((error) => {
+                // Silently fallback - don't log expected 404 errors
+                lastProgressRef.current[contract.id] = JSON.stringify(currentProgress.progress);
+                dispatch(updateContractProgress({
+                  contractId: contract.id,
+                  progress: currentProgress.progress
+                }));
+              });
+          }
+        }, 500); // 500ms debounce
       }
     });
+    
+    // Cleanup on unmount
+    return () => {
+      Object.values(updateTimeoutRef.current).forEach(timeout => clearTimeout(timeout));
+    };
   }, [produceInventory, contracts.activeContracts, dispatch]);
   
   // ตรวจสอบสัญญาที่หมดอายุ
@@ -76,7 +195,18 @@ function ContractsPanel() {
     );
     
     expiredContracts.forEach(contract => {
-      dispatch(expireContract(contract.id));
+      // ✅ DELETE Method - Remove expired contracts via API
+      deleteContract(contract.id)
+        .then((response) => {
+          // Sync to Redux after successful API deletion
+          if (response && response.data && response.data.success) {
+            dispatch(expireContract(contract.id));
+          }
+        })
+        .catch((error) => {
+          // Silently fallback to Redux - 404s are expected (no real server)
+          dispatch(expireContract(contract.id));
+        });
     });
   }, [currentDay, contracts.activeContracts, dispatch]);
   
@@ -342,7 +472,8 @@ function ContractsPanel() {
                   
                   <div style={{
                     display: 'flex',
-                    gap: '8px'
+                    gap: '8px',
+                    alignItems: 'center'
                   }}>
                     {contract.rewards.map((reward, index) => (
                       <div key={index} style={{
