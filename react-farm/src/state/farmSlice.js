@@ -585,9 +585,23 @@ const farmSlice = createSlice({
     // Game Control
     // ========================================
     resetGame: (state) => {
+      // Clear API-related localStorage data
+      try {
+        localStorage.removeItem('api_contracts');
+        localStorage.removeItem('api_market');
+      } catch (error) {
+        // Silently handle localStorage errors
+      }
+      
+      const resetTime = Date.now();
+      
       return {
         ...INITIAL_STATE,
-        gameStartTime: Date.now(),
+        gameStartTime: resetTime,
+        contracts: {
+          ...INITIAL_STATE.contracts,
+          lastContractGeneration: resetTime, // Reset countdown timer to start from 5:00
+        },
       };
     },
 

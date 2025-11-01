@@ -70,32 +70,8 @@ function ContractsPanel() {
     loadContractsFromAPI();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
-  
-  // สร้างสัญญาใหม่
-  useEffect(() => {
-    const shouldGenerateContract = contracts.activeContracts.length < 3 && 
-      (Date.now() - contracts.lastContractGeneration) > (5 * 60 * 1000); // ทุก 5 นาที
-    
-    if (shouldGenerateContract) {
-      const newContract = generateRandomContract(currentDay, level);
-      
-      // ✅ POST Method - Create contract via API
-      createContract(newContract)
-        .then((response) => {
-          // Sync to Redux after successful API call
-          if (response && response.data) {
-            dispatch(addContract(response.data));
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to create contract via API, using Redux only:', error);
-          // Fallback to Redux only if API fails
-          dispatch(addContract(newContract));
-        });
-    }
-  }, [currentDay, level, contracts.activeContracts.length, contracts.lastContractGeneration, dispatch]);
 
-  // นับถอยหลังสัญญาใหม่
+  // นับถอยหลังสัญญาใหม่ - สร้างสัญญาเมื่อ countdown สำเร็จ
   useEffect(() => {
     const format = (ms) => {
       const totalSeconds = Math.max(0, Math.floor(ms / 1000));

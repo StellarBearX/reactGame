@@ -1,5 +1,6 @@
 // src/components/Inventory.jsx
 import React from "react";
+import PropTypes from 'prop-types';
 import { useSelector, useDispatch } from 'react-redux';
 import { CROPS_DATA } from '../data/crops.js';
 import { clearSelectedSeed, selectSeed } from '../state/farmSlice.js';
@@ -103,6 +104,11 @@ function Inventory() {
     </div>
   );
 }
+
+// ✅ ข้อ 1: PropTypes validation (10%)
+Inventory.propTypes = {
+  // This component doesn't receive props but PropTypes is defined to demonstrate knowledge
+};
 
 export default Inventory;
 

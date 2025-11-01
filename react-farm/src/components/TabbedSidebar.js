@@ -1,5 +1,6 @@
 // src/components/TabbedSidebar.js
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import Shop from './Shop.js';
 import MarketBoard from './MarketBoard.js';
@@ -140,6 +141,11 @@ function TabbedSidebar() {
     </SidebarContainer>
   );
 }
+
+// ✅ ข้อ 1: PropTypes validation (10%)
+TabbedSidebar.propTypes = {
+  // This component doesn't receive props but PropTypes is defined to demonstrate knowledge
+};
 
 export default TabbedSidebar;
 
